@@ -7,6 +7,7 @@ from scipy.stats import binned_statistic
 from maldi_nn import topf
 import matplotlib.pyplot as plt
 import h5torch
+import torch
 
 class SpectrumObject:
     """Base Spectrum Object class
@@ -144,6 +145,11 @@ class SpectrumObject:
         mz = s[:, 0]
         intensity = s[:, 1]
         return cls(mz = mz, intensity = intensity)
+
+    def torch(self):
+        """Converts spectrum to dict of tensors
+        """
+        return {"mz": torch.tensor(self.mz), "intensity" : torch.tensor(self.intensity)}
 
 
 class Binner:
