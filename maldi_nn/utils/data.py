@@ -1,6 +1,6 @@
+import torch
 import h5torch
 import numpy as np
-import torch
 
 def spectra_to_torch(spectra):
     spectra = [s.torch() for s in spectra]
@@ -8,7 +8,6 @@ def spectra_to_torch(spectra):
         "mz": torch.stack([s["mz"] for s in spectra]),
         "intensity": torch.stack([s["intensity"] for s in spectra])
         }
-
 
 class MALDITOFDataset(h5torch.Dataset):
     def __init__(self, path, subset = None):
