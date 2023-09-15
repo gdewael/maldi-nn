@@ -4,7 +4,7 @@ from scipy.linalg import norm
 import pandas as pd
 import numpy as np
 from scipy.stats import binned_statistic
-from maldi_nn import topf
+from maldi_nn.utils import topf
 import matplotlib.pyplot as plt
 import h5torch
 import torch
