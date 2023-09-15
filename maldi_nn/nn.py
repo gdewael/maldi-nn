@@ -34,6 +34,14 @@ class MLP(nn.Module):
     def forward(self, spectrum):
         return self.net(spectrum["intensity"])
 
+class Permute(nn.Module):
+    def __init__(self, *args):
+        super().__init__()
+        self.args = args
+
+    def forward(self, x):
+        return x.permute(*self.args)
+
 class Transformer(nn.Module):
     def __init__(
         self,
