@@ -3,8 +3,8 @@ Deep learning tools and models for MALDI-TOF spectra analysis.
 
 Features:
 - Reading and preprocessing functions for MALDI-TOF spectra.
-- Model definitions to process SMILES strings with state-of-the-art techniques.
-- Model definitions and scripts to train AMR models on the DRIAMS database.
+- Model definitions to process SMILES strings with state-of-the-art techniques (relevant for feature-based AMR prediction).
+- Model definitions and scripts to train AMR models on the [DRIAMS database](https://datadryad.org/stash/dataset/doi:10.5061/dryad.bzkh1899q).
 
 ## Install
 
