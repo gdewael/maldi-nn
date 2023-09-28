@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import h5torch
 import torch
 
+
 class SpectrumObject:
     """Base Spectrum Object class
 
@@ -23,8 +24,8 @@ class SpectrumObject:
     intensity : 1-D np.array, optional
         intensity values, by default None
     """
+
     def __init__(self, mz=None, intensity=None):
-        
         self.mz = mz
         self.intensity = intensity
         if self.intensity is not None:
@@ -43,7 +44,7 @@ class SpectrumObject:
         else:
             return 0
 
-    def plot(self, as_peaks = False):
+    def plot(self, as_peaks=False):
         """Plot a spectrum via matplotlib
 
         Parameters
@@ -52,31 +53,38 @@ class SpectrumObject:
             draw points in the spectrum as individualpeaks, instead of connecting the points in the spectrum, by default False
         """
         if as_peaks:
-            mz_plot = np.stack([self.mz-1, self.mz, self.mz+1]).T.reshape(-1)
-            int_plot = np.stack([np.zeros_like(self.intensity), self.intensity, np.zeros_like(self.intensity)]).T.reshape(-1)
+            mz_plot = np.stack([self.mz - 1, self.mz, self.mz + 1]).T.reshape(-1)
+            int_plot = np.stack(
+                [
+                    np.zeros_like(self.intensity),
+                    self.intensity,
+                    np.zeros_like(self.intensity),
+                ]
+            ).T.reshape(-1)
         else:
             mz_plot, int_plot = self.mz, self.intensity
         plt.plot(mz_plot, int_plot)
 
     def __repr__(self):
-        string_ = np.array2string(np.stack([self.mz, self.intensity]), precision=5, threshold=10, edgeitems = 2)
+        string_ = np.array2string(
+            np.stack([self.mz, self.intensity]), precision=5, threshold=10, edgeitems=2
+        )
         mz_string, int_string = string_.split("\n")
         mz_string = mz_string[1:]
         int_string = int_string[1:-1]
         return "SpectrumObject([\n\tmz  = %s,\n\tint = %s\n])" % (mz_string, int_string)
 
-    
     @staticmethod
     def tof2mass(ML1, ML2, ML3, TOF):
         A = ML3
-        B = np.sqrt(1e12/ML1)
+        B = np.sqrt(1e12 / ML1)
         C = ML2 - TOF
-        
+
         if A == 0:
-            return (C*C)/(B*B)
+            return (C * C) / (B * B)
         else:
-            return ((-B + np.sqrt((B*B) - (4*A*C)))/(2*A))**2
-        
+            return ((-B + np.sqrt((B * B) - (4 * A * C))) / (2 * A)) ** 2
+
     @classmethod
     def from_bruker(cls, acqu_file, fid_file):
         """Read a spectrum from Bruker's format
@@ -93,7 +101,7 @@ class SpectrumObject:
         SpectrumObject
         """
         with open(acqu_file, "rb") as f:
-            lines = [line.decode('utf-8', errors='replace').rstrip() for line in f]
+            lines = [line.decode("utf-8", errors="replace").rstrip() for line in f]
         for l in lines:
             if l.startswith("##$TD"):
                 TD = int(l.split("= ")[1])
@@ -117,15 +125,15 @@ class SpectrumObject:
         if len(intensity) < TD:
             TD = len(intensity)
         TOF = DELAY + np.arange(TD) * DW
-                
+
         mass = cls.tof2mass(ML1, ML2, ML3, TOF)
 
         intensity[intensity < 0] = 0
 
-        return cls(mz = mass, intensity = intensity)
+        return cls(mz=mass, intensity=intensity)
 
     @classmethod
-    def from_tsv(cls, file, sep = " "):
+    def from_tsv(cls, file, sep=" "):
         """Read a spectrum from txt
 
         Parameters
@@ -144,12 +152,11 @@ class SpectrumObject:
         ).values
         mz = s[:, 0]
         intensity = s[:, 1]
-        return cls(mz = mz, intensity = intensity)
+        return cls(mz=mz, intensity=intensity)
 
     def torch(self):
-        """Converts spectrum to dict of tensors
-        """
-        return {"mz": torch.tensor(self.mz), "intensity" : torch.tensor(self.intensity)}
+        """Converts spectrum to dict of tensors"""
+        return {"mz": torch.tensor(self.mz), "intensity": torch.tensor(self.intensity)}
 
 
 class Binner:
@@ -168,6 +175,7 @@ class Binner:
         Is passed to the statistic argument of https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.binned_statistic.html
         Can take any argument that the statistic argument also takes, by default "sum"
     """
+
     def __init__(self, start=2000, stop=20000, step=3, aggregation="sum"):
         self.bins = np.arange(start, stop + 1e-8, step)
         self.mz_bins = self.bins[:-1] + step / 2
@@ -190,6 +198,7 @@ class Binner:
         s = SpectrumObject(intensity=bins, mz=self.mz_bins)
         return s
 
+
 class Normalizer:
     """Pre-processing function for normalizing the intensity of a spectrum.
     Commonly referred to as total ion current (TIC) calibration.
@@ -199,11 +208,11 @@ class Normalizer:
     sum : int, optional
         Make the total intensity of the spectrum equal to this amount, by default 1
     """
+
     def __init__(self, sum=1):
         self.sum = sum
 
     def __call__(self, SpectrumObj):
-
         s = SpectrumObject()
 
         s = SpectrumObject(
@@ -224,6 +233,7 @@ class Trimmer:
     max : int, optional
         remove all measurements with mz's higher than this value, by default 20000
     """
+
     def __init__(self, min=2000, max=20000):
         self.range = [min, max]
 
@@ -246,6 +256,7 @@ class VarStabilizer:
         function to apply to intensities.
         can be either "sqrt", "log", "log2" or "log10", by default "sqrt"
     """
+
     def __init__(self, method="sqrt"):
         methods = {"sqrt": np.sqrt, "log": np.log, "log2": np.log2, "log10": np.log10}
         self.fun = methods[method]
@@ -277,6 +288,7 @@ class BaselineCorrecter:
     snip_n_iter : int, optional
         iterations of SNIP, by default 10
     """
+
     def __init__(
         self,
         method=None,
@@ -364,13 +376,16 @@ class Smoother:
     polyorder : int, optional
         polyorder of savgol_filter, by default 3
     """
+
     def __init__(self, halfwindow=10, polyorder=3):
         self.window = halfwindow * 2 + 1
         self.poly = polyorder
 
     def __call__(self, SpectrumObj):
         s = SpectrumObject(
-            intensity=np.maximum(savgol_filter(SpectrumObj.intensity, self.window, self.poly), 0),
+            intensity=np.maximum(
+                savgol_filter(SpectrumObj.intensity, self.window, self.poly), 0
+            ),
             mz=SpectrumObj.mz,
         )
         return s
@@ -386,8 +401,8 @@ class PersistenceTransformer:
     extract_nonzero : bool, optional
         whether to extract detected peaks or to keep zeros in, by default False
     """
+
     def __init__(self, extract_nonzero=False):
-        
         self.filter = extract_nonzero
 
     def __call__(self, SpectrumObj):
@@ -416,6 +431,7 @@ class PeakFilter:
     min_intensity : float, optional
         Min intensity of peaks to keep, by default None, for no filtering
     """
+
     def __init__(self, max_number=None, min_intensity=None):
         self.max_number = max_number
         self.min_intensity = min_intensity
@@ -447,7 +463,8 @@ class RandomPeakShifter:
     std : float, optional
         stdev of the random noise to add, by default 1
     """
-    def __init__(self, std=1.):
+
+    def __init__(self, std=1.0):
         self.std = std
 
     def __call__(self, SpectrumObj):
@@ -458,6 +475,7 @@ class RandomPeakShifter:
         )
         return s
 
+
 class UniformPeakShifter:
     """Pre-processing function for adding uniform noise to the mz values of peaks.
 
@@ -466,6 +484,7 @@ class UniformPeakShifter:
     range : float, optional
         let each peak shift by maximum this value, by default 1.5
     """
+
     def __init__(self, range=1.5):
         self.range = range
 
@@ -473,9 +492,12 @@ class UniformPeakShifter:
         s = SpectrumObject(
             intensity=SpectrumObj.intensity,
             mz=SpectrumObj.mz
-            + np.random.uniform(low = -self.range, high = self.range, size=SpectrumObj.mz.shape),
+            + np.random.uniform(
+                low=-self.range, high=self.range, size=SpectrumObj.mz.shape
+            ),
         )
         return s
+
 
 class Binarizer:
     """Pre-processing function for binarizing intensity values of peaks.
@@ -485,13 +507,16 @@ class Binarizer:
     threshold : float
         Threshold for the intensities to become 1 or 0.
     """
+
     def __init__(self, threshold):
         self.threshold = threshold
 
     def __call__(self, SpectrumObj):
         s = SpectrumObject(
-            intensity=(SpectrumObj.intensity > self.threshold).astype(SpectrumObj.intensity.dtype),
-            mz=SpectrumObj.mz
+            intensity=(SpectrumObj.intensity > self.threshold).astype(
+                SpectrumObj.intensity.dtype
+            ),
+            mz=SpectrumObj.mz,
         )
         return s
 
@@ -511,6 +536,7 @@ class SequentialPreprocessor:
     preprocessed_spectrum = preprocessor(spectrum)
     ```
     """
+
     def __init__(self, *args):
         self.preprocessors = args
 

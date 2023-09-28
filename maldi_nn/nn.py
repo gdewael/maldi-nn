@@ -3,6 +3,7 @@ import torch
 from bio_attention.attention import TransformerEncoder
 from bio_attention.embed import ContinuousEmbedding
 
+
 class MLP(nn.Module):
     def __init__(
         self,
@@ -10,7 +11,7 @@ class MLP(nn.Module):
         n_outputs=512,
         layer_dims=[512, 512, 512],
         layer_or_batchnorm="layer",
-        dropout=0.1,
+        dropout=0.2,
     ):
         super().__init__()
 
@@ -34,6 +35,7 @@ class MLP(nn.Module):
     def forward(self, spectrum):
         return self.net(spectrum["intensity"])
 
+
 class Permute(nn.Module):
     def __init__(self, *args):
         super().__init__()
@@ -42,17 +44,18 @@ class Permute(nn.Module):
     def forward(self, x):
         return x.permute(*self.args)
 
+
 class Transformer(nn.Module):
     def __init__(
         self,
         depth,
         dim,
-        n_heads = 8,
-        dropout = 0.2,
+        n_heads=8,
+        dropout=0.2,
         cls=True,
-        reduce = "none",
-        output_head_dim = 64
-        ):
+        reduce="none",
+        output_head_dim=64,
+    ):
         super().__init__()
 
         self.embed = ContinuousEmbedding(
@@ -65,17 +68,17 @@ class Transformer(nn.Module):
         )
 
         self.transformer = TransformerEncoder(
-            depth = depth,
-            dim = dim,
-            nh = n_heads,
+            depth=depth,
+            dim=dim,
+            nh=n_heads,
             attentiontype="vanilla",
-            attention_args={"dropout" : dropout},
+            attention_args={"dropout": dropout},
             plugintype="sinusoidal",
-            plugin_args={"dim" : dim, "divide" : 10},
-            only_apply_plugin_at_first = True,
-            dropout = dropout,
-            glu_ff = True,
-            activation = "gelu"
+            plugin_args={"dim": dim, "divide": 10},
+            only_apply_plugin_at_first=True,
+            dropout=dropout,
+            glu_ff=True,
+            activation="gelu",
         )
 
         self.reduce = reduce
@@ -84,7 +87,7 @@ class Transformer(nn.Module):
 
     def forward(self, spectrum):
         z = self.embed(spectrum["intensity"])
-        z = self.transformer(z, pos = spectrum["mz"])
+        z = self.transformer(z, pos=spectrum["mz"])
 
         if self.reduce == "mean":
             return self.output_head(z.sum(1))

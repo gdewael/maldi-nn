@@ -233,7 +233,6 @@ class PersistenceTransformer:
                 # The point is a local minimum, so we have to merge the
                 # two neighbours.
                 if y_left >= y and y <= y_right:
-
                     # The left neighbour is the younger neighbour, so it
                     # will be merged into the right one.
                     if a[uf.find(left_index), 1] < a[uf.find(right_index), 1]:
@@ -259,7 +258,6 @@ class PersistenceTransformer:
                 # has a higher function value, the other one has a
                 # lower function value.
                 elif not (y > y_left and y > y_right):
-
                     # Always merge the current point into the higher one
                     # of its neighbours. This merge does not result in a
                     # pair.

@@ -13,6 +13,11 @@ from bio_attention.embed import DiscreteEmbedding
 
 
 class SmilesEncoder:
+    def __init__(self):
+        self.vocab = {}
+        self.embeds = []
+        self.alphabet_dict = {}
+
     def __call__(self, smiles_string):
         return (
             self.vocab[smiles_string]
@@ -166,6 +171,7 @@ class SmilesToImage(SmilesEncoder):
 
         return embed.transpose(2, 0, 1).astype(np.float32)
 
+
 class SmilesToLINGOKernel(SmilesEncoder):
     def __init__(self, smiles_list):
         super().__init__()
@@ -175,10 +181,10 @@ class SmilesToLINGOKernel(SmilesEncoder):
         for i in range(len(embedded)):
             for j in range(i, len(embedded)):
                 sim = self.LINGOsim(embedded[i], embedded[j])
-                kernel[i,j] = sim
-                kernel[j,i] = sim
+                kernel[i, j] = sim
+                kernel[j, i] = sim
 
-        self.vocab = {smiles : kernel[ix, :] for ix, smiles in enumerate(smiles_list)}
+        self.vocab = {smiles: kernel[ix, :] for ix, smiles in enumerate(smiles_list)}
         self.embeds = embedded
 
     def embed(self, smiles_string):
@@ -187,17 +193,24 @@ class SmilesToLINGOKernel(SmilesEncoder):
 
     def get_n_fourmers(self, smiles):
         smiles = re.sub("\d", "o", smiles)
-        fourmers = [smiles[s:s+4] for s in range(len(smiles)-3)]
-        return {s : c for s, c in zip(*np.unique(fourmers, return_counts = True))}
+        fourmers = [smiles[s : s + 4] for s in range(len(smiles) - 3)]
+        return {s: c for s, c in zip(*np.unique(fourmers, return_counts=True))}
 
     def LINGOsim(self, s1, s2):
         l_ = set.union(*[set(s1.keys()), set(s2.keys())])
-        return sum([1 - abs(self.take(s1, l) - self.take(s2, l)) / abs(self.take(s1, l) + self.take(s2, l)) for l in l_]) / len(l_)
+        return sum(
+            [
+                1
+                - abs(self.take(s1, l) - self.take(s2, l))
+                / abs(self.take(s1, l) + self.take(s2, l))
+                for l in l_
+            ]
+        ) / len(l_)
 
     @staticmethod
     def take(dict_, elem):
-        return (dict_[elem] if elem in dict_ else 0)
-    
+        return dict_[elem] if elem in dict_ else 0
+
 
 class DrugOneHotEmbedding(nn.Module):
     def __init__(self, num_drugs, dim):
@@ -206,14 +219,16 @@ class DrugOneHotEmbedding(nn.Module):
 
     def forward(self, drug):
         return self.embed(drug.long())
-    
+
 
 class DrugMLP(maldinn.MLP):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
     def forward(self, drug):
         return self.net(drug)
-    
+
+
 class DrugGRU(nn.Module):
     def __init__(self, vocab_size, hidden_dim=256, bidirectional=True, out_head=64):
         super().__init__()
@@ -255,13 +270,14 @@ class MaskedConv1dWrapper(nn.Module):
         else:
             return self.conv(x)
 
+
 class Conv1DBlock(nn.Module):
     def __init__(
         self,
         dim,
         kernel_size,
-        depthwise = False,
-        glu_ff = True,
+        depthwise=False,
+        glu_ff=True,
         dropout=0.2,
         activation="gelu",
     ):
@@ -273,25 +289,27 @@ class Conv1DBlock(nn.Module):
         elif activation.lower() == "swish":
             act = nn.SiLU()
 
-        self.conv = MaskedConv1dWrapper(nn.Conv1d(
-            dim,
-            dim,
-            kernel_size=kernel_size,
-            padding=kernel_size // 2,
-            groups=(dim if depthwise else 1),
-        ))
+        self.conv = MaskedConv1dWrapper(
+            nn.Conv1d(
+                dim,
+                dim,
+                kernel_size=kernel_size,
+                padding=kernel_size // 2,
+                groups=(dim if depthwise else 1),
+            )
+        )
 
         self.norm = nn.Sequential(
             maldinn.Permute(0, 2, 1),
             nn.LayerNorm(dim),
             maldinn.Permute(0, 2, 1),
-            )
-        
+        )
+
         self.prenorm = nn.Sequential(
             maldinn.Permute(0, 2, 1),
             nn.LayerNorm(dim),
             maldinn.Permute(0, 2, 1),
-            )
+        )
 
         project_in = (
             nn.Sequential(nn.Linear(dim, 4 * dim), act)
@@ -349,43 +367,138 @@ class DrugCNN(nn.Module):
             z = layer(z, mask=mask)
 
         return self.output_head(z.max(2).values)
-        
+
+
 class DrugTransformer(nn.Module):
     def __init__(
         self,
         vocab_size,
         dim=128,
         depth=6,
-        n_head=4,
+        n_head=8,
         dropout=0.2,
         out_head=64,
     ):
         super().__init__()
-        
+
         self.embed = DiscreteEmbedding(vocab_size, dim, cls=True)
         self.body = TransformerEncoder(
-            depth = depth,
-            dim = dim,
-            nh = n_head,
-            attention_args={"dropout" : dropout},
-            plugintype = "sinusoidal",
-            plugin_args = {"dim" : dim},
-            only_apply_plugin_at_first = True,
-            dropout = dropout,
-            glu_ff = True,
-            activation = "gelu",
+            depth=depth,
+            dim=dim,
+            nh=n_head,
+            attention_args={"dropout": dropout},
+            plugintype="sinusoidal",
+            plugin_args={"dim": dim},
+            only_apply_plugin_at_first=True,
+            dropout=dropout,
+            glu_ff=True,
+            activation="gelu",
         )
-        
-        self.agg = Aggregator(method = "cls")
+
+        self.agg = Aggregator(method="cls")
         self.output_head = nn.Linear(dim, out_head)
 
     def forward(self, drug):
         mask = (drug != -1).all(-1)
         drug = torch.argmax(drug, dim=2).to(self.embed.embedder.weight.dtype)
         drug[~mask] = torch.nan
-        
+
         x = self.embed(drug)
 
-        z = self.body(x, mask = mask)
+        z = self.body(x, mask=mask)
 
         return self.output_head(self.agg(z))
+
+
+class Conv2DBlock(nn.Module):
+    def __init__(
+        self,
+        dim,
+        kernel_size=5,
+        dropout=0.2,
+        depthwise=False,
+        glu_ff=True,
+        activation="gelu",
+    ):
+        super().__init__()
+
+        if activation.lower() == "relu":
+            act = nn.ReLU()
+        elif activation.lower() == "gelu":
+            act = nn.GELU()
+        elif activation.lower() == "swish":
+            act = nn.SiLU()
+
+        self.conv = nn.Conv2d(
+            dim,
+            dim,
+            kernel_size=kernel_size,
+            padding=kernel_size // 2,
+            groups=(dim if depthwise else 1),
+        )
+
+        self.norm = nn.Sequential(
+            maldinn.Permute(0, 2, 3, 1),
+            nn.LayerNorm(dim),
+            maldinn.Permute(0, 3, 1, 2),
+        )
+
+        project_in = (
+            nn.Sequential(nn.Linear(dim, 4 * dim), act)
+            if not glu_ff
+            else GLU(dim, 4 * dim, act)
+        )
+
+        self.pointwise_net = nn.Sequential(
+            maldinn.Permute(0, 2, 3, 1),
+            project_in,
+            nn.Dropout(dropout),
+            nn.Linear(4 * dim, dim),
+            maldinn.Permute(0, 3, 1, 2),
+        )
+
+        self.prenorm = nn.Sequential(
+            maldinn.Permute(0, 2, 3, 1),
+            nn.LayerNorm(dim),
+            maldinn.Permute(0, 3, 1, 2),
+        )
+
+    def forward(self, x):
+        z = self.conv(self.prenorm(x)) + x
+        z = self.pointwise_net(self.norm(z)) + z
+        return z
+
+
+class DrugImageCNN(nn.Module):
+    def __init__(
+        self,
+        stem_downsample=2,
+        kernel_size=5,
+        hidden_dim=32,
+        depth=2,
+        dropout=0.2,
+        out_head=64,
+    ):
+        super().__init__()
+
+        body = [nn.Conv2d(3, hidden_dim, stem_downsample, stride=stem_downsample)]
+
+        for _ in range(depth):
+            body.append(
+                Conv2DBlock(
+                    hidden_dim,
+                    kernel_size=kernel_size,
+                    dropout=dropout,
+                    glu_ff=True,
+                    activation="gelu",
+                    depthwise=False,
+                )
+            )
+
+        self.body = nn.Sequential(*body)
+
+        self.output_head = nn.Linear(hidden_dim, out_head)
+
+    def forward(self, drug):
+        z = self.body(drug)
+        return self.output_head(z.max(-1).values.max(-1).values)
