@@ -142,73 +142,33 @@ options:
 `maldi-nn` comes with a commands for each of the tested non-recommender baselines, e.g.:
 
 ```bash
-reproduce_maldi_baselines_lr /path/to/DRIAMS_ROOT/amrbin.h5 predictions_lr.npz
-reproduce_maldi_baselines_xgb /path/to/DRIAMS_ROOT/amrbin.h5 predictions_xgb.npz
-reproduce_maldi_baselines_MLP /path/to/DRIAMS_ROOT/amrbin.h5 predictions_S.npz S --devices [0]
-reproduce_maldi_baselines_MLP /path/to/DRIAMS_ROOT/amrbin.h5 predictions_M.npz M --devices [0]
-reproduce_maldi_baselines_MLP /path/to/DRIAMS_ROOT/amrbin.h5 predictions_L.npz L --devices [0]
-reproduce_maldi_baselines_MLP /path/to/DRIAMS_ROOT/amrbin.h5 predictions_XL.npz XL --devices [0]
+reproduce_amr_baseline /path/to/DRIAMS_ROOT/amrbin.h5 predictions_lr.npz lr
 ```
 
-<details><summary>reproduce_maldi_baselines_lr flags</summary>
+<details><summary>reproduce_amr_baseline flags</summary>
 
 ```
-reproduce_maldi_baselines_lr --help
+reproduce_amr_baseline --help
 
-usage: reproduce_maldi_baselines_lr [-h] path outputs.npz
-
-Training script for non-recommender logistic regression baselines.
-
-positional arguments:
-  path         path to h5torch file.
-  outputs.npz  numpy .npz file to write (test) predictions into.
-
-options:
-  -h, --help   show this help message and exit
-```
-</details>
-
-<details><summary>reproduce_maldi_baselines_xgb flags</summary>
-
-```
-reproduce_maldi_baselines_xgb --help
-
-usage: reproduce_maldi_baselines_xgb [-h] path outputs.npz
-
-Training script for non-recommender xgboost baselines.
-
-positional arguments:
-  path         path to h5torch file.
-  outputs.npz  numpy .npz file to write (test) predictions into.
-
-options:
-  -h, --help   show this help message and exit
-```
-</details>
-
-<details><summary>reproduce_maldi_baselines_MLP flags</summary>
-
-```
-reproduce_maldi_baselines_MLP --help
-
-usage: reproduce_maldi_baselines_MLP [-h] [--devices literal_eval] path outputs.npz size
+usage: amr_baselinescript.py [-h] [--mlp_size {S,M,L,XL,Linear}] [--mlp_devices literal_eval] path outputs.npz modeltype
 
 Training script for non-recommender MLP baselines.
 
 positional arguments:
   path                  path to h5torch file.
   outputs.npz           numpy .npz file to write (test) predictions into.
-  size                  Which size spectrum embedder to use, choices: {S, M, L, XL, Linear}
+  modeltype             Which modeltype to use as baseline, choices: {MLP, lr, xgb}
 
 options:
   -h, --help            show this help message and exit
-  --devices literal_eval
-                        devices to use. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus. (default: 1)
+  --mlp_size {S,M,L,XL,Linear}
+                        Which size spectrum embedder to use for MLP, choices: {S, M, L, XL, Linear} (default: ['M'])
+  --mlp_devices literal_eval
+                        devices to use for MLP. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus. (default: 1)
 ```
 </details>
 
-**Warning**, the baselinescript_MLP.py scripts will create a huge dump of models inside `./lightning_logs/`. After running the scripts, this folder can be safely removed.
-
+**Warning**, if MLP is chosen as modeltype, the script will create a huge dump of models inside `./lightning_logs/`. After running the scripts, this folder can be safely removed.
 
 ## Credits
 - Implementations of many MALDI reading and processing functions were based on the R package [MaldiQuant](https://github.com/sgibb/MALDIquant).
