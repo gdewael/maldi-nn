@@ -17,7 +17,7 @@ You may need to [install PyTorch](https://pytorch.org/get-started/locally/) befo
 
 ## Academic Reproducibility
 
-This package contains all code to reproduce the results in ["Paper name"](www.google.com).
+This package contains all code to reproduce the results in our paper ["An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://www.biorxiv.org/content/10.1101/2023.09.28.559916v2).
 The following will assume the `maldi-nn` python package has been installed.
 
 ### DRIAMS data download instructions
@@ -173,3 +173,15 @@ options:
 ## Credits
 - Implementations of many MALDI reading and processing functions were based on the R package [MaldiQuant](https://github.com/sgibb/MALDIquant).
 - Topological Peak Filtering was taken from the [Topf package](https://github.com/BorgwardtLab/Topf).
+
+## Citation
+```
+@article{de2023antimicrobial,
+  title={An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks},
+  author={De Waele, Gaetan and Menschaert, Gerben and Waegeman, Willem},
+  journal={bioRxiv},
+  pages={2023--09},
+  year={2023},
+  publisher={Cold Spring Harbor Laboratory}
+}
+```
