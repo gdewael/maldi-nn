@@ -3,8 +3,9 @@ import argparse
 import torch
 from sklearn.metrics import roc_auc_score
 import numpy as np
-from maldi_nn.models import AMRModel
+from maldi_nn.models import AMRModel, MaldiTransformer
 from maldi_nn.utils.data import DRIAMSAMRDataModule
+from maldi_nn.spectrum import PeakFilter
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch import Trainer
@@ -69,13 +70,20 @@ def prec_at_1_neg(trues, preds, locs, drug_names):
             total += 1
     return (total - pos) / total
 
-
-size_to_layer_dims = {
-    "S": [256, 128],
-    "M": [512, 256, 128],
-    "L": [1024, 512, 256, 128],
-    "XL": [2048, 1024, 512, 256, 128],
-    "Linear": [],
+size_to_layer_dims ={
+    "mlp" : {
+        "S": [256, 128],
+        "M": [512, 256, 128],
+        "L": [1024, 512, 256, 128],
+        "XL": [2048, 1024, 512, 256, 128],
+        "Linear": [],
+    },
+    "trf": {
+        "S": [160, 4],
+        "M": [184, 6],
+        "L": [232, 8],
+        "XL": [304, 10],
+    }
 }
 
 drug_encoder_args = {
@@ -106,12 +114,21 @@ def main():
         choices=["ecfp", "onehot", "gru", "cnn", "trf", "img", "kernel"],
         help="Which drug embedder to use, choices: {%(choices)s}",
     )
+
     parser.add_argument(
         "spectrum_embedder",
         type=str,
         metavar="spectrum_embedder",
+        choices=["trf", "mlp"],
+        help="Which spectrum embedder to use, choices: {%(choices)s}",
+    )
+
+    parser.add_argument(
+        "spectrum_embedder_size",
+        type=str,
+        metavar="spectrum_embedder_size",
         choices=["S", "M", "L", "XL", "Linear"],
-        help="Which size spectrum embedder to use, choices: {%(choices)s}",
+        help="Which size to use for spectrum embedder, choices: {%(choices)s}. Linear is only available for mlp.",
     )
     parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate.")
     parser.add_argument(
@@ -134,6 +151,21 @@ def main():
         help="devices to use. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus.",
     )
 
+    parser.add_argument(
+        "--trf_n_peaks",
+        type=int,
+        default=200,
+        help="Number of peaks for transformer-peak-based models",
+    )
+
+    parser.add_argument(
+        "--trf_ckpt_path",
+        type=str,
+        default="None",
+        help="Checkpoint path of malditransformer",
+    )
+
+
     args = parser.parse_args()
 
     dm = DRIAMSAMRDataModule(
@@ -142,7 +174,7 @@ def main():
         drug_encoder_args=drug_encoder_args[args.drug_embedder],
         batch_size=128,
         n_workers=args.num_workers,
-        preprocessor=None,
+        preprocessor=(None if args.spectrum_embedder == "mlp" else PeakFilter(max_number=args.trf_n_peaks)),
         min_spectrum_len=None,
         in_memory=True,
     )
@@ -176,15 +208,30 @@ def main():
         "img": {"stem_downsample": 2, "kernel_size": 5, "hidden_dim": 32, "depth": 2},
     }
 
-    model = AMRModel(
-        spectrum_embedder="mlp",
-        drug_embedder=args.drug_embedder,
-        spectrum_kwargs={
+    if args.spectrum_embedder == "mlp":
+        spectrum_kwargs = {
             "n_inputs": 6000,
             "n_outputs": 64,
-            "layer_dims": size_to_layer_dims[args.spectrum_embedder],
+            "layer_dims": size_to_layer_dims["mlp"][args.spectrum_embedder_size],
             "dropout": 0.2,
-        },
+        }
+    elif args.spectrum_embedder == "trf":
+        spectrum_kwargs = {
+            "depth": size_to_layer_dims["trf"][args.spectrum_embedder_size][1],
+            "dim": size_to_layer_dims["trf"][args.spectrum_embedder_size][0],
+            "output_head_dim": 64,
+            "reduce": "cls",
+            "dropout": 0.2,
+        }
+        if args.trf_ckpt_path != "None":
+            malditransformer = MaldiTransformer.load_from_checkpoint(args.trf_ckpt_path)
+            spectrum_kwargs["depth"] = malditransformer.hparams.depth
+            spectrum_kwargs["dim"] = malditransformer.hparams.dim
+
+    model = AMRModel(
+        spectrum_embedder=args.spectrum_embedder,
+        drug_embedder=args.drug_embedder,
+        spectrum_kwargs=spectrum_kwargs,
         drug_kwargs=drug_embedder_kwargs[args.drug_embedder],
         lr=args.lr,
         weight_decay=0,
@@ -193,6 +240,16 @@ def main():
         scaled_dot_product=True,
     )
 
+    if (args.trf_ckpt_path != "None") and (args.spectrum_embedder == "trf"):
+        pretrained_dict = malditransformer.transformer.state_dict()
+        model_state_dict = model.spectrum_embedder.state_dict()
+        pretrained_dict = {
+            k: v for k, v in pretrained_dict.items() if not k.startswith("output_head")
+        }
+        model_state_dict.update(pretrained_dict)
+        model.spectrum_embedder.load_state_dict(model_state_dict)
+
+
     val_ckpt = ModelCheckpoint(monitor="val_micro_auc", mode="max")
     callbacks = [
         val_ckpt,
@@ -200,7 +257,7 @@ def main():
     ]
     logger = TensorBoardLogger(
         args.logs_path,
-        name="amr_%s_%s_%s" % (args.drug_embedder, args.spectrum_embedder, args.lr),
+        name="amr%s_%s_%s_%s" % (args.spectrum_embedder, args.drug_embedder, args.spectrum_embedder_size, args.lr),
     )
 
     trainer = Trainer(
