@@ -62,9 +62,11 @@ class MALDITOFDataset(h5torch.Dataset):
         spectrum = {
             "intensity": torch.tensor(spectrum.intensity).float(),
             "mz": torch.tensor(spectrum.mz),
+            "species" : sample["central"],
+            "0/loc" : sample["0/loc"].astype(str)
         }
 
-        sample = {k: v for k, v in sample.items() if k not in ["0/intensity", "0/mz"]}
+        sample = {k: v for k, v in sample.items() if k not in ["0/intensity", "0/mz", "central"]}
         return sample | spectrum
 
 
@@ -247,6 +249,21 @@ class DRIAMSSpectrumDataModule(MaldiDataModule):
         self.train_indices = np.where(
             trainmatcher(f["unstructured/split"][:].astype(str))
         )[0]
+
+        trainmatcher = np.vectorize(lambda x: bool(re.match("B_", x)))
+        B_ = np.where(
+            trainmatcher(f["unstructured/split"][:].astype(str))
+        )[0]
+        trainmatcher = np.vectorize(lambda x: bool(re.match("C_", x)))
+        C_ = np.where(
+            trainmatcher(f["unstructured/split"][:].astype(str))
+        )[0]
+        trainmatcher = np.vectorize(lambda x: bool(re.match("D_", x)))
+        D_ = np.where(
+            trainmatcher(f["unstructured/split"][:].astype(str))
+        )[0]
+        self.train_indices = np.concatenate([self.train_indices, B_, C_, D_])
+
         valmatcher = np.vectorize(lambda x: bool(re.match("A_val", x)))
         self.val_indices = np.where(valmatcher(f["unstructured/split"][:].astype(str)))[
             0
