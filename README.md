@@ -75,7 +75,7 @@ Each type of file will be created in 3 formats: Raw, binned and peaks. Raw are t
 We provide convenient access to our models with the train_amr function, which is available as a terminal command after installation of maldi-nn.
 
 ```bash
-train_amr /path/to/DRIAMS_ROOT/amrbin.h5 logs/ onehot M --lr 0.0005 --devices [0]
+train_amr /path/to/DRIAMS_ROOT/amrbin.h5 logs/ onehot mlp M --lr 0.0005 --devices [0]
 ```
 
 Upon completion of the script, tensorboard logs will be present in the `logs/` folder. Additionally, two lines will be written in a `logs/res.txt` file. The first line will contain the validation performance metrics (micro ROC-AUC, macro ROC-AUC, instance-wise ROC-AUC and Precision@1 of the negative class, in that order), and the second line will contain the test metrics.
@@ -87,15 +87,18 @@ Note that this script will only always train, validate, and test on the DRIAMS-A
 ```
 train_amr --help
 
-usage: train_amr [-h] [--lr float] [--logging_file str] [--num_workers int] [--devices literal_eval] path logs_path drug_embedder spectrum_embedder
+usage: train_amr [-h] [--lr float] [--logging_file str] [--num_workers int] [--devices literal_eval] [--trf_n_peaks int] [--trf_ckpt_path str]
+                    path logs_path drug_embedder spectrum_embedder spectrum_embedder_size
 
 Training script for dual-branch AMR recommender.
 
 positional arguments:
   path                  path to h5torch file.
   logs_path             path to logs.
-  drug_embedder         Which drug embedder to use, choices {ecfp, onehot, gru, cnn, trf, img, kernel}
-  spectrum_embedder     Which size spectrum embedder to use, choices {S, M, L, XL, Linear}
+  drug_embedder         Which drug embedder to use, choices: {ecfp, onehot, gru, cnn, trf, img, kernel}
+  spectrum_embedder     Which spectrum embedder to use, choices: {trf, mlp}
+  spectrum_embedder_size
+                        Which size to use for spectrum embedder, choices: {S, M, L, XL, Linear}. Linear is only available for mlp.
 
 options:
   -h, --help            show this help message and exit
@@ -104,6 +107,8 @@ options:
   --num_workers int     Number of workers in dataloader. Reduce to alleviate CPU. (default: 4)
   --devices literal_eval
                         devices to use. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus. (default: 1)
+  --trf_n_peaks int     Number of peaks for transformer-peak-based models (default: 200)
+  --trf_ckpt_path str   Checkpoint path of malditransformer (default: None)
 ```
 </details>
 
@@ -156,7 +161,7 @@ reproduce_amr_baseline /path/to/DRIAMS_ROOT/amrbin.h5 predictions_lr.npz lr
 ```
 reproduce_amr_baseline --help
 
-usage: amr_baselinescript.py [-h] [--mlp_size {S,M,L,XL,Linear}] [--mlp_devices literal_eval] path outputs.npz modeltype
+usage: reproduce_amr_baseline [-h] [--mlp_size {S,M,L,XL,Linear}] [--mlp_devices literal_eval] path outputs.npz modeltype
 
 Training script for non-recommender MLP baselines.
 
