@@ -27,6 +27,9 @@ If you don't want to run our code and are just after the training-validation-tes
 
 To download DRIAMS: in a separate folder (which we will call DRIAMS_ROOT), download DRIAMS-A, -B, -C, and -D from its [download page](https://datadryad.org/stash/dataset/doi:10.5061/dryad.bzkh1899q).
 Unpack (`tar -zvxf ...`) all folders in DRIAMS_ROOT such that it looks like this:
+
+<details><summary>DRIAMS folder structure</summary>
+
 ```
 DRIAMS_ROOT/
 ├── DRIAMS-A
@@ -59,6 +62,9 @@ DRIAMS_ROOT/
 ...
 
 ```
+
+</details>
+
 Then, in the terminal, run: `process_DRIAMS /path/to/DRIAMS_ROOT/ /path/to/DRIAMS_ROOT/amrraw.h5 /path/to/DRIAMS_ROOT/spectraraw.h5 /path/to/DRIAMS_ROOT/amrbin.h5 /path/to/DRIAMS_ROOT/spectrabin.h5 /path/to/DRIAMS_ROOT/amrpks.h5 /path/to/DRIAMS_ROOT/spectrapks.h5`
 
 This command will create 6 new h5torch files. 3 files containing all spectra in DRIAMS, and 3 files containing the spectra with drug resistance information.
