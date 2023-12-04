@@ -1,10 +1,13 @@
 # maldi-nn
 Deep learning tools and models for MALDI-TOF spectra analysis.
+Contains all code and scripts to reproduce: ["An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://www.biorxiv.org/content/10.1101/2023.09.28.559916v2), and "Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction" (in draft).
 
-Features:
-- Reading and preprocessing functions for MALDI-TOF spectra.
-- Model definitions to process SMILES strings with state-of-the-art techniques (relevant for feature-based AMR prediction).
+Package features:
+- Reading and preprocessing functions for MALDI-TOF MS spectra.
+- Model definitions to process SMILES strings with state-of-the-art techniques (for feature-based AMR prediction).
+- Model definitions to pre-train state-of-the-art Transformer networks on MALDI-TOF MS data
 - Model definitions and scripts to train AMR models on the [DRIAMS database](https://datadryad.org/stash/dataset/doi:10.5061/dryad.bzkh1899q).
+- Model definitions and scripts to train species identification models.
 
 ## Install
 
