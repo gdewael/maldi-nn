@@ -54,7 +54,7 @@ def main():
         type=str,
         default="vanilla",
         choices=["vanilla", "negpeaksampler", "intensitymlm", "onlyclf", "onlyshf"],
-        help="Maldi Transformer training mode, choices: {%(choices)s} Ignored if a ckpt_path is given",
+        help="Maldi Transformer training mode, choices: {%(choices)s} Note that negpeaksampler requires to run reproduce.estimate_peak_distr first.",
         )
 
     parser.add_argument(
