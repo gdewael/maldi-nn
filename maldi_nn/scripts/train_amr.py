@@ -10,6 +10,11 @@ from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch import Trainer
 import ast
+from maldi_nn.reproduce.modules import (
+    MaldiTransformerNegSampler,
+    MaldiTransformerOnlyClf,
+    MaldiTransformerMaskMSE
+)
 
 
 def boolean(v):
