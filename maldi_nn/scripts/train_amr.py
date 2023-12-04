@@ -164,7 +164,13 @@ def main():
         default="None",
         help="Checkpoint path of malditransformer",
     )
-
+    parser.add_argument(
+        "--trf_ckpt_modeltype",
+        type=str,
+        default="vanilla",
+        choices=["vanilla", "negpeaksampler", "intensitymlm", "onlyclf", "onlyshf"],
+        help="Maldi Transformer pre-trained modeltype. choices: {%(choices)s}",
+    )
 
     args = parser.parse_args()
 
@@ -224,7 +230,16 @@ def main():
             "dropout": 0.2,
         }
         if args.trf_ckpt_path != "None":
-            malditransformer = MaldiTransformer.load_from_checkpoint(args.trf_ckpt_path)
+            modeltype = MaldiTransformer
+            if args.trf_ckpt_modeltype == "intensitymlm":
+                modeltype = MaldiTransformerMaskMSE
+            elif args.trf_ckpt_modeltype == "negpeaksampler":
+                modeltype = MaldiTransformerNegSampler
+            elif args.trf_ckpt_modeltype == "onlyclf":
+                modeltype = MaldiTransformerOnlyClf
+            
+
+            malditransformer = modeltype.load_from_checkpoint(args.trf_ckpt_path)
             spectrum_kwargs["depth"] = malditransformer.hparams.depth
             spectrum_kwargs["dim"] = malditransformer.hparams.dim
 
