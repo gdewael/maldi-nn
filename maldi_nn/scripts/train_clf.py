@@ -74,7 +74,12 @@ def main():
         help="Number of workers in dataloader. Reduce to alleviate CPU.",
     )
 
-    parser.add_argument("--devices", type=ast.literal_eval, default=1)
+    parser.add_argument(
+        "--devices",
+        type=ast.literal_eval,
+        default=1,
+        help="devices to use. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus.",
+    )
 
     parser.add_argument(
         "--trf_n_peaks",
