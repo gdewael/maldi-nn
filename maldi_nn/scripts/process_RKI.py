@@ -9,16 +9,6 @@ import numpy as np
 from maldi_nn.spectrum import *
 import shutil
 
-RKI_root = str(sys.argv[1])
-spectraraw = str(sys.argv[2])
-spectrabin = str(sys.argv[3])
-spectrapks = str(sys.argv[4])
-
-RKI_raw_to_h5torch(RKI_root, spectraraw)
-RKI_raw_to_binned(spectraraw, spectrabin)
-RKI_raw_to_peaks(spectraraw, spectrapks)
-
-
 def RKI_raw_to_h5torch(RKI_ROOT, outfile):
     data_path = files("maldi_nn.utils").joinpath("RKI_split.json")
     split = json.load(open(data_path))
@@ -123,3 +113,17 @@ def RKI_raw_to_peaks(rawfile, processed_file):
 
     file.close()
     return None
+
+
+def main():
+    RKI_root = str(sys.argv[1])
+    spectraraw = str(sys.argv[2])
+    spectrabin = str(sys.argv[3])
+    spectrapks = str(sys.argv[4])
+
+    RKI_raw_to_h5torch(RKI_root, spectraraw)
+    RKI_raw_to_binned(spectraraw, spectrabin)
+    RKI_raw_to_peaks(spectraraw, spectrapks)
+
+if __name__ == "__main__":
+    main()
