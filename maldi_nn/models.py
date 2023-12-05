@@ -177,6 +177,7 @@ class SpeciesClassifier(MaldiLightningModule):
         weight_decay=0,
         lr_decay_factor=1.00,
         warmup_steps=250,
+        genus_labels = None,
     ):
         super().__init__(
             lr=lr,
@@ -194,9 +195,10 @@ class SpeciesClassifier(MaldiLightningModule):
             n_classes = spectrum_kwargs["output_head_dim"]
 
         self.accuracy = MulticlassAccuracy(num_classes=n_classes, average="micro")
-        self.top5_accuracy = MulticlassAccuracy(
-            num_classes=n_classes, top_k=5, average="micro"
-        )
+
+        if genus_labels is not None:
+            self.genus_accuracy = MulticlassAccuracy(num_classes=torch.unique(genus_labels).shape[0], average="micro")
+            self.genus_labels = genus_labels
 
     def forward(self, batch):
         return self.spectrum_embedder(batch)
@@ -236,10 +238,10 @@ class SpeciesClassifier(MaldiLightningModule):
             on_epoch=True,
             batch_size=len(batch["species"]),
         )
-        self.top5_accuracy(logits, batch["species"])
+        self.genus_accuracy(self.genus_labels.to(logits.device)[logits.argmax(-1)], self.genus_labels.to(logits.device)[batch["species"]])
         self.log(
-            "val_top5_acc",
-            self.top5_accuracy,
+            "val_genus_acc",
+            self.genus_accuracy,
             on_step=False,
             on_epoch=True,
             batch_size=len(batch["species"]),
