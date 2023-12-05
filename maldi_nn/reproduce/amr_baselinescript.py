@@ -466,7 +466,7 @@ def main_xgb(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Training script for non-recommender MLP baselines.",
+        description="Training script for non-recommender AMR baselines.",
         formatter_class=CustomFormatter,
     )
 
