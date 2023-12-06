@@ -23,7 +23,7 @@ def RKI_raw_to_h5torch(RKI_ROOT, outfile):
             r_ = root.split("/")
             species.append(r_[-6])
             subspecies.append(r_[-5])
-            loc.append(root.lstrip(RKI_ROOT))
+            loc.append(root.removeprefix(RKI_ROOT))
             s = SpectrumObject.from_bruker(
                 os.path.join(root, "acqu"), os.path.join(root, "fid")
             )
