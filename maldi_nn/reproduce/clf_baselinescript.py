@@ -194,9 +194,7 @@ def main_rf(args):
             "locs": test_locs,
         }
     )
-
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description="Training script for species identification baselines. Returns an npz file with predictions for the test set.",
         formatter_class=CustomFormatter,
@@ -225,4 +223,8 @@ if __name__ == "__main__":
         main_lr(args)
     elif args.modeltype == "rf":
         main_rf(args)
+
+if __name__ == "__main__":
+    main()
+    
     

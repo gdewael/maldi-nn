@@ -463,8 +463,7 @@ def main_xgb(args):
         }
     )
 
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description="Training script for non-recommender AMR baselines.",
         formatter_class=CustomFormatter,
@@ -499,11 +498,13 @@ if __name__ == "__main__":
         help="devices to use for MLP. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus.",
     )
     args = parser.parse_args()
-
     if args.modeltype == "MLP":
         main_MLP(args)
     elif args.modeltype == "lr":
         main_lr(args)
     elif args.modeltype == "xgb":
         main_xgb(args)
+
+if __name__ == "__main__":
+    main()
     
