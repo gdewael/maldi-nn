@@ -1,6 +1,6 @@
 # Reproducing study results
 
-This repository/package contains all code to reproduce the main results in our papers [(1) "An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://www.biorxiv.org/content/10.1101/2023.09.28.559916v3). and [(2) "Pre-trained Maldi Transformers improve MALDI-TOF MS-based predictions"](google.com).
+This repository/package contains all code to reproduce the main results in our papers [(1) "An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://www.biorxiv.org/content/10.1101/2023.09.28.559916v3). and [(2) "Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction"](https://www.biorxiv.org/content/10.1101/2024.01.18.576189v1).
 The following will assume the `maldi-nn` python package has been installed.
 
 ## (1) An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks

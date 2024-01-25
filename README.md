@@ -27,8 +27,11 @@ All information regarding reproducing our results can be found in the [reproduce
 - Topological Peak Filtering was taken from the [Topf package](https://github.com/BorgwardtLab/Topf).
 
 ## Citation
+
+Antimicrobial drug recommenders:
+
 ```
-@article{de2023antimicrobial,
+@article{dewaele2023antimicrobial,
   title={An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks},
   author={De Waele, Gaetan and Menschaert, Gerben and Waegeman, Willem},
   journal={bioRxiv},
@@ -36,4 +39,19 @@ All information regarding reproducing our results can be found in the [reproduce
   year={2023},
   publisher={Cold Spring Harbor Laboratory}
 }
+
+```
+
+Maldi Transformers:
+
+```
+@article{dewaele2024pre,
+  title={Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction},
+  author={De Waele, Gaetan and Menschaert, Gerben and Vandamme, Peter and Waegeman, Willem},
+  journal={bioRxiv},
+  pages={2024--01},
+  year={2024},
+  publisher={Cold Spring Harbor Laboratory}
+}
+
 ```
