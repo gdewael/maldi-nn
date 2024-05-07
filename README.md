@@ -15,6 +15,8 @@ Package features:
 pip install maldi-nn
 ```
 
+In case this package loses backward-compatibility with more-recent versions of PyTorch and PyTorch Lightning: the code has been tested with `torch==2.0.1` and `pytorch-lightning==2.0.9`. If you encounter errors with these packages, try running the code using these versions.
+
 You may need to [install PyTorch](https://pytorch.org/get-started/locally/) before running this command in order to ensure the right CUDA kernels for your system are installed
 
 ## Academic Reproducibility
