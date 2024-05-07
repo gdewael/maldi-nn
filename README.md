@@ -21,7 +21,7 @@ You may need to [install PyTorch](https://pytorch.org/get-started/locally/) befo
 
 ## Academic Reproducibility
 
-This package contains all code and scripts to reproduce: ["An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://www.biorxiv.org/content/10.1101/2023.09.28.559916v3), and "Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction" (in draft).
+This package contains all code and scripts to reproduce: ["An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://www.biorxiv.org/content/10.1101/2023.09.28.559916v3), and ["Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction"](https://www.biorxiv.org/content/10.1101/2024.01.18.576189v1).
 All information regarding reproducing our results can be found in the [reproduce folder README](https://github.com/gdewael/maldi-nn/tree/main/maldi_nn/reproduce)
 
 ## Credits
