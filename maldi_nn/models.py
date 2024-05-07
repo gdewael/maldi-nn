@@ -13,6 +13,7 @@ from maldi_nn.utils.drug import (
     DrugImageCNN,
 )
 import maldi_nn.nn as maldinn
+from maldi_nn.utils.metrics import *
 
 
 class MaldiLightningModule(LightningModule):
@@ -104,7 +105,7 @@ class AMRModel(MaldiLightningModule):
 
         self.scale = scaled_dot_product
 
-        self.auroc = BinaryAUROC()
+        self.validation_step_outputs = []
 
     def forward(self, batch):
         drug_embedding = self.drug_embedder(batch["drug"])
@@ -145,14 +146,28 @@ class AMRModel(MaldiLightningModule):
             batch_size=len(batch["label"]),
         )
 
-        self.auroc(logits, batch["label"])
-        self.log(
-            "val_micro_auc",
-            self.auroc,
-            on_step=False,
-            on_epoch=True,
-            batch_size=len(batch["label"]),
+        self.validation_step_outputs.append(
+            (
+                logits.cpu(),
+                batch["label"].to(logits).cpu(),
+                batch["loc"],
+                batch["drug_name"],
+            )
         )
+
+    def on_validation_epoch_end(self):
+        trues = torch.cat([v[1] for v in self.validation_step_outputs]).numpy()
+        preds = torch.cat([v[0] for v in self.validation_step_outputs]).numpy()
+        locs = np.concatenate([v[2] for v in self.validation_step_outputs])
+        drugs = np.concatenate([v[3] for v in self.validation_step_outputs])
+
+        self.log(
+            "val_roc_auc",
+            ic_roc_auc(preds, trues, locs, drugs)[0],
+            sync_dist=True,
+        )
+
+        self.validation_step_outputs.clear()
 
     def predict_step(self, batch, batch_idx):
         batch["intensity"] = batch["intensity"].to(self.dtype)
@@ -162,7 +177,8 @@ class AMRModel(MaldiLightningModule):
         logits = self(batch)
 
         return (
-            torch.stack([batch["label"].to(logits), logits], -1),
+            logits.cpu(),
+            batch["label"].to(logits).cpu(),
             batch["loc"],
             batch["drug_name"],
         )

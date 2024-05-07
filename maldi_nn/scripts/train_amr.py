@@ -15,6 +15,7 @@ from maldi_nn.reproduce.modules import (
     MaldiTransformerOnlyClf,
     MaldiTransformerMaskMSE
 )
+from maldi_nn.utils.metrics import *
 
 
 def boolean(v):
@@ -32,48 +33,6 @@ class CustomFormatter(
     argparse.ArgumentDefaultsHelpFormatter, argparse.MetavarTypeHelpFormatter
 ):
     pass
-
-
-# eval phase:
-def micro_roc_auc(trues, preds, locs, drug_names):
-    return roc_auc_score(trues, preds)
-
-
-def macro_roc_auc(trues, preds, locs, drug_names):
-    t = []
-    for c in np.unique(drug_names):
-        trues_sub = trues[drug_names == c]
-        if len(np.unique(trues_sub)) > 1:
-            preds_sub = preds[drug_names == c]
-            t.append(roc_auc_score(trues_sub, preds_sub))
-    return np.mean(t)
-
-
-def instance_roc_auc(trues, preds, locs, drug_names):
-    r, c = np.unique(locs, return_counts=True)
-    pos = 0
-    total = 0
-    for r_ in r[c > 1]:
-        trues_sub = trues[locs == r_]
-        if len(np.unique(trues[locs == r_])) > 1:
-            preds_sub = preds[locs == r_]
-            p = preds_sub[trues_sub == 1][:, None] >= preds_sub[trues_sub == 0]
-            pos += p.sum()
-            total += p.size
-    return pos / total
-
-
-def prec_at_1_neg(trues, preds, locs, drug_names):
-    r, c = np.unique(locs, return_counts=True)
-    pos = 0
-    total = 0
-    for r_ in r[c > 1]:
-        trues_sub = trues[locs == r_]
-        if len(np.unique(trues[locs == r_])) > 1:
-            preds_sub = preds[locs == r_]
-            pos += trues_sub[np.argmin(preds_sub)]
-            total += 1
-    return (total - pos) / total
 
 size_to_layer_dims ={
     "mlp" : {
@@ -270,10 +229,10 @@ def main():
         model.spectrum_embedder.load_state_dict(model_state_dict)
 
 
-    val_ckpt = ModelCheckpoint(monitor="val_micro_auc", mode="max")
+    val_ckpt = ModelCheckpoint(monitor="val_roc_auc", mode="max")
     callbacks = [
         val_ckpt,
-        EarlyStopping(monitor="val_micro_auc", patience=10, mode="max"),
+        EarlyStopping(monitor="val_roc_auc", patience=10, mode="max"),
     ]
     logger = TensorBoardLogger(
         args.logs_path,
@@ -297,20 +256,19 @@ def main():
         model, dataloaders=dm.val_dataloader(), ckpt_path=val_ckpt.best_model_path
     )
 
-    trues = torch.cat([pp[0][:, 0] for pp in p]).numpy()
-    preds = torch.cat([pp[0][:, 1] for pp in p]).numpy()
-    locs = np.concatenate([pp[1] for pp in p])
-    drug_names = np.concatenate([pp[2] for pp in p])
+    trues = torch.cat([v[1] for v in p]).numpy()
+    preds = torch.cat([v[0] for v in p]).numpy()
+    locs = np.concatenate([v[2] for v in p])
+    drugs = np.concatenate([v[3] for v in p])
 
     with open(os.path.join(args.logs_path, args.logging_file), "a") as f:
         f.write(
             "%s\tval\t%.5f\t%.5f\t%.5f\t%.5f\n"
             % (
                 val_ckpt.best_model_path,
-                micro_roc_auc(trues, preds, locs, drug_names),
-                macro_roc_auc(trues, preds, locs, drug_names),
-                instance_roc_auc(trues, preds, locs, drug_names),
-                prec_at_1_neg(trues, preds, locs, drug_names),
+                ic_roc_auc(preds, trues, locs, drugs)[0],
+                macro_roc_auc(preds, trues, locs, drugs)[0],
+                prec_at_1_neg(preds, trues, locs, drugs),
             )
         )
 
@@ -319,20 +277,19 @@ def main():
         model, dataloaders=dm.test_dataloader(), ckpt_path=val_ckpt.best_model_path
     )
 
-    trues = torch.cat([pp[0][:, 0] for pp in p]).numpy()
-    preds = torch.cat([pp[0][:, 1] for pp in p]).numpy()
-    locs = np.concatenate([pp[1] for pp in p])
-    drug_names = np.concatenate([pp[2] for pp in p])
+    trues = torch.cat([v[1] for v in p]).numpy()
+    preds = torch.cat([v[0] for v in p]).numpy()
+    locs = np.concatenate([v[2] for v in p])
+    drugs = np.concatenate([v[3] for v in p])
 
     with open(os.path.join(args.logs_path, args.logging_file), "a") as f:
         f.write(
             "%s\ttest\t%.5f\t%.5f\t%.5f\t%.5f\n"
             % (
                 val_ckpt.best_model_path,
-                micro_roc_auc(trues, preds, locs, drug_names),
-                macro_roc_auc(trues, preds, locs, drug_names),
-                instance_roc_auc(trues, preds, locs, drug_names),
-                prec_at_1_neg(trues, preds, locs, drug_names),
+                ic_roc_auc(preds, trues, locs, drugs)[0],
+                macro_roc_auc(preds, trues, locs, drugs)[0],
+                prec_at_1_neg(preds, trues, locs, drugs),
             )
         )
 
