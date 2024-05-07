@@ -21,7 +21,7 @@ You may need to [install PyTorch](https://pytorch.org/get-started/locally/) befo
 
 ## Academic Reproducibility
 
-This package contains all code and scripts to reproduce: ["An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://www.biorxiv.org/content/10.1101/2023.09.28.559916v3), and ["Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction"](https://www.biorxiv.org/content/10.1101/2024.01.18.576189v1).
+This package contains all code and scripts to reproduce: ["An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://doi.org/10.7554/eLife.93242.1), and ["Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction"](https://www.biorxiv.org/content/10.1101/2024.01.18.576189v1).
 All information regarding reproducing our results can be found in the [reproduce folder README](https://github.com/gdewael/maldi-nn/tree/main/maldi_nn/reproduce)
 
 ## Credits
@@ -35,11 +35,12 @@ Antimicrobial drug recommenders:
 ```
 @article{dewaele2023antimicrobial,
   title={An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks},
+  url={http://dx.doi.org/10.1101/2023.09.28.559916},
+  DOI={10.1101/2023.09.28.559916},
+  publisher={Cold Spring Harbor Laboratory},
   author={De Waele, Gaetan and Menschaert, Gerben and Waegeman, Willem},
-  journal={bioRxiv},
-  pages={2023--09},
   year={2023},
-  publisher={Cold Spring Harbor Laboratory}
+  month=sep,
 }
 
 ```
