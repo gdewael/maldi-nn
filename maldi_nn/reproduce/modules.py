@@ -12,6 +12,7 @@ from maldi_nn.spectrum import (
     UniformPeakShifter,
     SequentialPreprocessor,
 )
+from importlib.resources import files
 
 
 class MaldiTransformerOnlyClf(MaldiLightningModule):
@@ -117,19 +118,33 @@ class MaldiTransformerOnlyClf(MaldiLightningModule):
 
 
 class MaskingPlugin:
-    def __init__(self, prob=0.15, unchanged=0.2):
+    def __init__(self, prob=0.15, unchanged=0.2, discretize=False, mask_mz=False, n_bins=18_000,):
         self.p = prob
         self.u = unchanged
 
-    def __call__(self, spectrum):
-        spectrum["intensity_true"] = spectrum["intensity"].clone()
-        train_indices = torch.empty(spectrum["intensity"].shape).uniform_() < self.p
+        if mask_mz:
+            self.discretizer = lambda x : np.digitize(x, np.arange(2000, 20_000.01, 18_000/n_bins)) - 1
+        else:
+            self.discretizer = lambda x : np.digitize(x, np.arange(0, 1+1e-8, 1/n_bins)) - 1
+        self.discretize = discretize
+        self.mask_mz = mask_mz
 
+    def __call__(self, spectrum):
+        train_indices = torch.empty(spectrum["intensity"].shape).uniform_() < self.p
         unchanged_indices = torch.empty(spectrum["intensity"].shape).uniform_() < self.u
 
-        spectrum["intensity"].masked_fill_(
+        if not self.mask_mz:
+            to_mask_group = "intensity"
+        else:
+            to_mask_group = "mz"
+        
+        spectrum["intensity_true"] = spectrum[to_mask_group].clone()
+        spectrum[to_mask_group].masked_fill_(
             train_indices & ~unchanged_indices, torch.nan
         )
+        if self.discretize:
+                spectrum["intensity_true"] = self.discretizer(spectrum["intensity_true"])
+
         spectrum["train_indices"] = train_indices
         return spectrum
 
@@ -255,6 +270,9 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
         weight_decay=0,
         lr_decay_factor=1,
         warmup_steps=2500,
+        regress_lm=True,
+        n_lm_classes=1000,
+        mask_mz=False,
     ):
         super().__init__(
             lr=lr,
@@ -273,7 +291,18 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
             output_head_dim=n_classes,
         )
 
-        self.output_head = nn.Linear(dim, 1)
+        self.output_head = nn.Linear(dim, (1 if regress_lm else n_lm_classes))
+        self.regress = regress_lm
+        self.mask_mz = mask_mz
+        if mask_mz:
+            prop = np.loadtxt(files("maldi_nn.utils").joinpath("prop.txt"))
+            mzs = np.arange(2000, 20000) + .5
+
+            emb = self.transformer.transformer.layers[0].plugin(
+                torch.zeros(1, 18000, self.hparams.dim), 
+                pos = torch.tensor(mzs).unsqueeze(0)
+            )[0]
+            self.mask_embedding = nn.Parameter((emb * torch.tensor(prop).unsqueeze(-1)).sum(0))
 
         self.n_species = n_classes
         self.clf = clf
@@ -285,8 +314,39 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
         )
 
     def forward(self, batch):
-        z = self.transformer(batch)
-        mlm_logits = self.output_head(z[:, 1:]).squeeze(-1)
+        if self.mask_mz:
+            nans = torch.isnan(batch["mz"])
+            batch["mz"][nans] = 0
+
+            # decomposition of this: z = self.transformer(batch)
+            z = self.transformer.embed(batch["intensity"])
+
+            z = self.transformer.transformer.layers[0].plugin.mod_x(
+                z, pos=batch["mz"], mask=~nans,
+            )
+            
+            z[torch.nn.functional.pad(nans, (1, 0), value = False)] = self.mask_embedding.to(z)
+
+            z = self.transformer.transformer.layers[0].attn(
+                self.transformer.transformer.layers[0].norm(z),
+                pos=batch["mz"],
+                mask=None
+            ) + z
+
+            z = self.transformer.transformer.layers[0].ff(z)
+
+            for layer in self.transformer.transformer.layers[1:]:
+                z = layer(z, pos=batch["mz"], mask=None)
+            # This is a hacky workaround to make "masking positional indices" work
+
+        else:
+            z = self.transformer(batch)
+
+
+        mlm_logits = self.output_head(z[:, 1:])
+        if self.regress:
+            mlm_logits = mlm_logits.squeeze(-1)
+
         if self.clf:
             clf_logits = self.transformer.output_head(z[:, 0, :])
             return mlm_logits, clf_logits
@@ -307,7 +367,11 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
         trues_train = self.train_indices_select(
             batch["intensity_true"], batch["train_indices"]
         )
-        mse_loss = F.mse_loss(mlm_logits_train, trues_train.to(self.dtype))
+
+        if self.regress:
+            mse_loss = F.mse_loss(mlm_logits_train, trues_train.to(self.dtype))
+        else:
+            mse_loss = F.cross_entropy(mlm_logits_train, trues_train)
 
         if self.clf:
             indexer = batch["species"] < self.n_species
@@ -337,7 +401,10 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
         trues_train = self.train_indices_select(
             batch["intensity_true"], batch["train_indices"]
         )
-        mse_loss = F.mse_loss(mlm_logits_train, trues_train.to(self.dtype))
+        if self.regress:
+            mse_loss = F.mse_loss(mlm_logits_train, trues_train.to(self.dtype))
+        else:
+            mse_loss = F.cross_entropy(mlm_logits_train, trues_train)
 
         self.log(
             "val_mseloss",

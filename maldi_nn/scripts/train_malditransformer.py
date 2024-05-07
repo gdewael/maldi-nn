@@ -53,7 +53,7 @@ def main():
         "--mode",
         type=str,
         default="vanilla",
-        choices=["vanilla", "negpeaksampler", "intensitymlm", "onlyclf", "onlyshf"],
+        choices=["vanilla", "negpeaksampler", "intensitymlm", "intensitymlm_ce", "mzmlm_ce", "onlyclf", "onlyshf"],
         help="Maldi Transformer training mode, choices: {%(choices)s} Note that negpeaksampler requires to run reproduce.estimate_peak_distr first.",
         )
 
@@ -75,7 +75,7 @@ def main():
         "--lmbda",
         type=float,
         default=1 / 100,
-        help="Lambda. This is the probability with which to apply the spec id loss per step. ",
+        help="Lambda. This is the probability with which to apply the spec id loss per step.",
     )
 
     parser.add_argument(
@@ -112,6 +112,13 @@ def main():
         type=ast.literal_eval,
         default=1,
         help="devices to use. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus.",
+    )
+
+    parser.add_argument(
+        "--mlm_ce_bins",
+        type=int,
+        default=18_000,
+        help="Only used when using `mzmlm_ce`, `intensitymlm_ce`",
     )
 
     args = parser.parse_args()
@@ -151,6 +158,28 @@ def main():
             in_memory=True,
             exclude_nans=False,
             noiser=MaskingPlugin(prob=args.p, unchanged=0.2),
+        )
+    elif args.mode == "intensitymlm_ce":
+        dm = DRIAMSSpectrumDataModuleWithNoiser(
+            args.path,
+            batch_size=args.batch_size,
+            n_workers=args.num_workers,
+            preprocessor=PeakFilter(max_number=args.n_peaks),
+            min_spectrum_len=128,
+            in_memory=True,
+            exclude_nans=False,
+            noiser=MaskingPlugin(prob=args.p, unchanged=0.2, discretize=True, mask_mz=False, n_bins=args.mlm_ce_bins),
+        )
+    elif args.mode == "mzmlm_ce":
+        dm = DRIAMSSpectrumDataModuleWithNoiser(
+            args.path,
+            batch_size=args.batch_size,
+            n_workers=args.num_workers,
+            preprocessor=PeakFilter(max_number=args.n_peaks),
+            min_spectrum_len=128,
+            in_memory=True,
+            exclude_nans=False,
+            noiser=MaskingPlugin(prob=args.p, unchanged=0.2, discretize=True, mask_mz=True, n_bins=args.mlm_ce_bins),
         )
     else:
         dm = DRIAMSSpectrumDataModule(
@@ -194,6 +223,19 @@ def main():
         modeltype = MaldiTransformerMaskMSE
         del model_kwargs["lmbda"]
         del model_kwargs["p"]
+    elif args.mode == "intensitymlm_ce":
+        modeltype = MaldiTransformerMaskMSE
+        del model_kwargs["lmbda"]
+        del model_kwargs["p"]
+        model_kwargs["regress_lm"] = False
+        model_kwargs["n_lm_classes"] = args.mlm_ce_bins
+    elif args.mode == "mzmlm_ce":
+        modeltype = MaldiTransformerMaskMSE
+        del model_kwargs["lmbda"]
+        del model_kwargs["p"]
+        model_kwargs["regress_lm"] = False
+        model_kwargs["n_lm_classes"] = args.mlm_ce_bins
+        model_kwargs["mask_mz"] = True
     elif args.mode == "onlyshf":
         model_kwargs["clf"] = False
 
