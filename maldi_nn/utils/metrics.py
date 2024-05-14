@@ -43,7 +43,7 @@ def ic_sensitivity(preds, trues, locs, drugs, threshold = 0.5):
     for l in np.unique(locs):
         sub = locs == l
         if not (trues[sub] == 0).all():
-            t.append(recall_score(trues[sub], sigmoid(preds[sub]) > threshold))
+            t.append(recall_score(trues[sub], sigmoid(preds[sub]) >= threshold))
 
     return np.mean(t), np.array(t)
 

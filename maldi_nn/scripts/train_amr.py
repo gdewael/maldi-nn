@@ -263,7 +263,7 @@ def main():
 
     with open(os.path.join(args.logs_path, args.logging_file), "a") as f:
         f.write(
-            "%s\tval\t%.5f\t%.5f\t%.5f\t%.5f\n"
+            "%s\tval\t%.5f\t%.5f\t%.5f\n"
             % (
                 val_ckpt.best_model_path,
                 ic_roc_auc(preds, trues, locs, drugs)[0],
@@ -284,7 +284,7 @@ def main():
 
     with open(os.path.join(args.logs_path, args.logging_file), "a") as f:
         f.write(
-            "%s\ttest\t%.5f\t%.5f\t%.5f\t%.5f\n"
+            "%s\ttest\t%.5f\t%.5f\t%.5f\n"
             % (
                 val_ckpt.best_model_path,
                 ic_roc_auc(preds, trues, locs, drugs)[0],
