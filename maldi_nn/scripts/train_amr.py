@@ -1,7 +1,6 @@
 import os
 import argparse
 import torch
-from sklearn.metrics import roc_auc_score
 import numpy as np
 from maldi_nn.models import AMRModel, MaldiTransformer
 from maldi_nn.utils.data import DRIAMSAMRDataModule

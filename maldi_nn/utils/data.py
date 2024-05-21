@@ -118,12 +118,20 @@ class DRIAMSAMRDataModule(MaldiDataModule):
         preprocessor=None,
         min_spectrum_len=None,
         in_memory=False,
+        train_indices=None,
+        val_indices=None,
+        test_indices=None,
     ):
         super().__init__(batch_size=batch_size, n_workers=n_workers)
-        self.path = path
+        
+        if isinstance(path, str):
+            path = h5torch.File(path)
+        
+        if in_memory and (not isinstance(path, h5torch.file.h5pyDict)):
+            path = path.to_dict()
 
         smiles_list = sorted(
-            list(set(list(h5torch.File(path)["1/drug_smiles"][:].astype(str))))
+            list(set(list(path["1/drug_smiles"][:].astype(str))))
         )
         if drug_encoder == "onehot":
             self.drug_encoder = SmilesToIndex(smiles_list)
@@ -132,16 +140,14 @@ class DRIAMSAMRDataModule(MaldiDataModule):
         elif drug_encoder == "img":
             self.drug_encoder = SmilesToImage(smiles_list, **drug_encoder_args)
         elif drug_encoder == "kernel":
-            f = h5torch.File(path)
             trainmatcher = np.vectorize(lambda x: bool(re.match("A_train", x)))
             train_indices = np.where(
-                trainmatcher(f["unstructured/split"][:].astype(str))
+                trainmatcher(path["unstructured/split"][:].astype(str))
             )[0]
-            cols = np.unique(f["central/indices"][:][1][train_indices])
+            cols = np.unique(path["central/indices"][:][1][train_indices])
             smiles_list = sorted(
-                list(set(list(f["1/drug_smiles"][:][cols].astype(str))))
+                list(set(list(path["1/drug_smiles"][:][cols].astype(str))))
             )
-            f.close()
             self.drug_encoder = SmilesToLINGOKernel(smiles_list)
 
         elif drug_encoder in ["cnn", "trf", "gru"]:
@@ -154,33 +160,51 @@ class DRIAMSAMRDataModule(MaldiDataModule):
 
         self.min_spectrum_len = min_spectrum_len
         self.preprocessor = preprocessor
-        self.in_memory = in_memory
+
+        self.train_indices = train_indices
+        self.val_indices = val_indices
+        self.test_indices = test_indices
+
+        self.path = path
 
     def setup(self, stage):
-        f = h5torch.File(self.path)
-        trainmatcher = np.vectorize(lambda x: bool(re.match("A_train", x)))
-        train_indices = np.where(trainmatcher(f["unstructured/split"][:].astype(str)))[
-            0
-        ]
-        valmatcher = np.vectorize(lambda x: bool(re.match("A_val", x)))
-        val_indices = np.where(valmatcher(f["unstructured/split"][:].astype(str)))[0]
-        testmatcher = np.vectorize(lambda x: bool(re.match("A_test", x)))
-        test_indices = np.where(testmatcher(f["unstructured/split"][:].astype(str)))[0]
+
+        f = self.path
+
 
         if self.min_spectrum_len is not None:
             lens_all = np.array([len(tt) for tt in f["0/intensity"][:]])
 
-            lens = lens_all[f["central"]["indices"][0][train_indices]]
-            train_indices = train_indices[lens > self.min_spectrum_len]
+        
+        if self.train_indices is None:
+            trainmatcher = np.vectorize(lambda x: bool(re.match("A_train", x)))
+            train_indices = np.where(trainmatcher(f["unstructured/split"][:].astype(str)))[
+                0
+            ]
+            if self.min_spectrum_len is not None:
+                lens = lens_all[f["central"]["indices"][0][train_indices]]
+                train_indices = train_indices[lens > self.min_spectrum_len]
+        else:
+            train_indices = self.train_indices
+        
+        if self.val_indices is None:
+            valmatcher = np.vectorize(lambda x: bool(re.match("A_val", x)))
+            val_indices = np.where(valmatcher(f["unstructured/split"][:].astype(str)))[0]
+            if self.min_spectrum_len is not None:
+                lens = lens_all[f["central"]["indices"][0][val_indices]]
+                val_indices = val_indices[lens > self.min_spectrum_len]
+        else:
+            val_indices = self.val_indices
+        
+        if self.test_indices is None:
+            testmatcher = np.vectorize(lambda x: bool(re.match("A_test", x)))
+            test_indices = np.where(testmatcher(f["unstructured/split"][:].astype(str)))[0]
+            if self.min_spectrum_len is not None:
+                lens = lens_all[f["central"]["indices"][0][test_indices]]
+                test_indices = test_indices[lens > self.min_spectrum_len]
+        else:
+            test_indices = self.test_indices
 
-            lens = lens_all[f["central"]["indices"][0][val_indices]]
-            val_indices = val_indices[lens > self.min_spectrum_len]
-
-            lens = lens_all[f["central"]["indices"][0][test_indices]]
-            test_indices = test_indices[lens > self.min_spectrum_len]
-
-        if self.in_memory:
-            f = f.to_dict()
 
         self.train = h5torch.Dataset(
             f,
