@@ -423,8 +423,11 @@ class LocalMaximaPeakDetector:
 
     Parameters
     ----------
-    extract_nonzero : bool, optional
-        whether to extract detected peaks or to keep zeros in, by default False
+    SNR : int, optional
+        Signal to noise radio. This function computes a SNR value as the median absolute deviation from the median intensity (MAD).
+        Only peaks with intensities a multiple of this SNR are considered. By default 2.
+    halfwindowsize: int, optional
+        half window size, an intensity can only be a peak if it is the highest value in a window. By default 20, for a total window size of 41.
     """
     def __init__(self, SNR=2, halfwindowsize=20,):
         self.hw = halfwindowsize
