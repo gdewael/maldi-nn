@@ -291,6 +291,7 @@ class MaldiTransformer(MaldiLightningModule):
         lr_decay_factor=1,
         warmup_steps=2500,
         lmbda = 1,
+        proportional=False,
     ):
         super().__init__(
             lr=lr,
@@ -316,6 +317,7 @@ class MaldiTransformer(MaldiLightningModule):
         self.clf_train_p = clf_train_p
         self.p = p
         self.lmbda = lmbda
+        self.prop = proportional
 
         self.auroc = BinaryAUROC()
         self.accuracy = MulticlassAccuracy(num_classes=n_classes, average="micro")
@@ -471,16 +473,27 @@ class MaldiTransformer(MaldiLightningModule):
     def shuffler(self, batch):
         mz = batch["mz"]
         intensity = batch["intensity"]
-        n = len(mz) // 2
 
         all_indices = torch.stack(torch.where(mz)).T
 
-        shuff, pos = torch.chunk(
-            torch.randperm(len(all_indices), device=all_indices.device)[
-                : int(len(all_indices) * self.p)
-            ],
-            2,
-        )
+        if self.prop:
+            intensities_norm = (intensity / intensity.sum(1)[:, None]).reshape(-1).cpu().numpy()
+            shuff, pos = torch.chunk(
+                torch.tensor(np.random.choice(
+                    len(all_indices),
+                    int(len(all_indices) * self.p),
+                    replace = False,
+                    p = (intensities_norm / intensities_norm.sum())
+                ), device=all_indices.device), 2
+            )
+
+        else:
+            shuff, pos = torch.chunk(
+                torch.randperm(len(all_indices), device=all_indices.device)[
+                    : int(len(all_indices) * self.p)
+                ],
+                2,
+            )
         shuffled_shuff = shuff[torch.randperm(len(shuff), device=shuff.device)]
 
         indexer = (all_indices[shuff] != all_indices[shuffled_shuff])[:, 0]
