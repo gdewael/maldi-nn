@@ -44,7 +44,7 @@ class SpectrumObject:
         else:
             return 0
 
-    def plot(self, as_peaks=False):
+    def plot(self, as_peaks=False, **kwargs):
         """Plot a spectrum via matplotlib
 
         Parameters
@@ -63,7 +63,7 @@ class SpectrumObject:
             ).T.reshape(-1)
         else:
             mz_plot, int_plot = self.mz, self.intensity
-        plt.plot(mz_plot, int_plot)
+        plt.plot(mz_plot, int_plot, **kwargs)
 
     def __repr__(self):
         string_ = np.array2string(
