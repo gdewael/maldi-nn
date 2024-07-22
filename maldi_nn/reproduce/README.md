@@ -101,6 +101,15 @@ options:
 ```
 </details>
 
+Similarly, we provide a script to reproduce our species-specific AMR prediction models:
+
+```bash
+reproduce_amr_speciesspecific /path/to/DRIAMS_ROOT/amrbin.h5 logs/ onehot mlp M --lr 0.0005 --devices [0]
+```
+
+This script will train the AMR models for the 25 most-occurring species in DRIAMS. For each species, 6 models are trained using different learning rates.
+
+
 ### Fine-tune on new hospitals
 
 To reproduce Section 4.3 from our paper, `maldi-nn` comes with a `reproduce_maldi_finetune_hosp` terminal command, e.g.:
@@ -350,4 +359,3 @@ options:
 ```
 
 </details>
-

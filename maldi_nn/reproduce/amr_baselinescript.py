@@ -153,7 +153,7 @@ def main_MLP(args):
 
         valscores_all = []
         preds_test_all = []
-        for lr in [1e-4, 5e-4, 1e-3, 5e-3]:
+        for lr in [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3]:
             model = BaselineModel(
                 spectrum_kwargs=kwargs,
                 lr=lr,
@@ -218,6 +218,9 @@ def main_MLP(args):
                     }
                     preds_test.append(model(batch).numpy())
                 preds_test_all.append(np.concatenate(preds_test))
+
+        
+            os.system("rm -r %s" % ("/".join(val_ckpt.best_model_path.split("/")[:-2])))
 
         # final model
         max_index = np.argmax(valscores_all)

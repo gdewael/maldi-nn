@@ -77,6 +77,13 @@ def main():
         default=1 / 100,
         help="Lambda. This is the probability with which to apply the spec id loss per step.",
     )
+    
+    parser.add_argument(
+        "--prop",
+        type=boolean,
+        default=False,
+        help="Sample peaks to shuffle/mask proportional to intensity.",
+    )
 
     parser.add_argument(
         "--lmbda2",
@@ -136,7 +143,7 @@ def main():
             batch_size=args.batch_size,
             n_workers=args.num_workers,
             preprocessor=PeakFilter(max_number=args.n_peaks),
-            min_spectrum_len=128,
+            min_spectrum_len=args.n_peaks,
             in_memory=True,
             exclude_nans=False,
             noiser=NegativeSamplerPlugin(
@@ -154,7 +161,7 @@ def main():
             batch_size=args.batch_size,
             n_workers=args.num_workers,
             preprocessor=PeakFilter(max_number=args.n_peaks),
-            min_spectrum_len=128,
+            min_spectrum_len=args.n_peaks,
             in_memory=True,
             exclude_nans=False,
             noiser=MaskingPlugin(prob=args.p, unchanged=0.2),
@@ -165,7 +172,7 @@ def main():
             batch_size=args.batch_size,
             n_workers=args.num_workers,
             preprocessor=PeakFilter(max_number=args.n_peaks),
-            min_spectrum_len=128,
+            min_spectrum_len=args.n_peaks,
             in_memory=True,
             exclude_nans=False,
             noiser=MaskingPlugin(prob=args.p, unchanged=0.2, discretize=True, mask_mz=False, n_bins=args.mlm_ce_bins),
@@ -176,7 +183,7 @@ def main():
             batch_size=args.batch_size,
             n_workers=args.num_workers,
             preprocessor=PeakFilter(max_number=args.n_peaks),
-            min_spectrum_len=128,
+            min_spectrum_len=args.n_peaks,
             in_memory=True,
             exclude_nans=False,
             noiser=MaskingPlugin(prob=args.p, unchanged=0.2, discretize=True, mask_mz=True, n_bins=args.mlm_ce_bins),
@@ -187,7 +194,7 @@ def main():
             batch_size=args.batch_size,
             n_workers=args.num_workers,
             preprocessor=PeakFilter(max_number=args.n_peaks),
-            min_spectrum_len=128,
+            min_spectrum_len=args.n_peaks,
             in_memory=True,
             exclude_nans=(True if args.mode == "onlyclf" else False),
         )
@@ -206,6 +213,7 @@ def main():
         "weight_decay" : 0,
         "lr_decay_factor" : 1,
         "warmup_steps" : 2500,
+        "proportional" : args.prop,
     }
 
     if args.mode == "onlyclf":

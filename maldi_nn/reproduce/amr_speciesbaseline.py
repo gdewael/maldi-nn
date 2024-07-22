@@ -155,11 +155,10 @@ def main():
         val = np.logical_and(np.isin(f["central/indices"][:][0], rows_with_species), f["unstructured/split"][:] == b"A_val")
         test = np.logical_and(np.isin(f["central/indices"][:][0], rows_with_species), f["unstructured/split"][:] == b"A_test")
 
-
+        
         train_indices = np.where(train)[0]
         val_indices = np.where(val)[0]
         test_indices = np.where(test)[0]
-
 
         dm = DRIAMSAMRDataModule(
             f,
@@ -238,6 +237,7 @@ def main():
         trues_test_per_lr_ = []
         locs_test_per_lr_ = []
         drugs_test_per_lr_ = []
+        ckpt_paths = []
         for lr in [1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3]:
             model = AMRModel(
                 spectrum_embedder=args.spectrum_embedder,
@@ -264,7 +264,7 @@ def main():
             val_ckpt = ModelCheckpoint(monitor="val_roc_auc", mode="max")
             callbacks = [
                 val_ckpt,
-                EarlyStopping(monitor="val_roc_auc", patience=10, mode="max"),
+                EarlyStopping(monitor="val_roc_auc", patience=20, mode="max"),
             ]
             logger = TensorBoardLogger(
                 os.path.join(args.logs_path, str(s)),
@@ -275,7 +275,7 @@ def main():
                 accelerator="gpu",
                 devices=args.devices,
                 strategy="auto",
-                val_check_interval=0.1,
+                val_check_interval=0.25,
                 max_epochs=50,
                 callbacks=callbacks,
                 logger=logger,
@@ -293,7 +293,7 @@ def main():
             locs = np.concatenate([v[2] for v in p])
             drugs = np.concatenate([v[3] for v in p])
             valscores_all.append(ic_roc_auc(preds, trues, locs, drugs)[0])
-            
+            ckpt_paths.append(val_ckpt.best_model_path)
 
             # test
             p = trainer.predict(
@@ -315,6 +315,12 @@ def main():
         drug_names_final.append(drugs_test_per_lr_[max_index])
         preds_final.append(preds_test_per_lr_[max_index])
         trues_final.append(trues_test_per_lr_[max_index])
+
+        with open(os.path.join(args.logs_path, args.logging_file).rstrip(".npz")+".txt", "a") as file:
+            file.write(
+                "%s\t%s\t%.5f\n"
+                % (s, ckpt_paths[max_index], valscores_all[max_index])
+            )
 
         
     np.savez(
