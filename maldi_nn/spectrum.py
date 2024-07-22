@@ -44,7 +44,7 @@ class SpectrumObject:
         else:
             return 0
 
-    def plot(self, as_peaks=False):
+    def plot(self, as_peaks=False, **kwargs):
         """Plot a spectrum via matplotlib
 
         Parameters
@@ -63,7 +63,7 @@ class SpectrumObject:
             ).T.reshape(-1)
         else:
             mz_plot, int_plot = self.mz, self.intensity
-        plt.plot(mz_plot, int_plot)
+        plt.plot(mz_plot, int_plot, **kwargs)
 
     def __repr__(self):
         string_ = np.array2string(
@@ -156,7 +156,10 @@ class SpectrumObject:
 
     def torch(self):
         """Converts spectrum to dict of tensors"""
-        return {"mz": torch.tensor(self.mz), "intensity": torch.tensor(self.intensity)}
+        return {
+            "mz": torch.tensor(self.mz).unsqueeze(0).to(torch.float),
+            "intensity": torch.tensor(self.intensity).unsqueeze(0).to(torch.float)
+        }
 
 
 class Binner:
@@ -417,6 +420,34 @@ class PersistenceTransformer:
             s = SpectrumObject(intensity=b[:, 1], mz=b[:, 0])
         return s
 
+class LocalMaximaPeakDetector:
+    """
+    Detects peaks a la MaldiQuant
+
+    Parameters
+    ----------
+    SNR : int, optional
+        Signal to noise radio. This function computes a SNR value as the median absolute deviation from the median intensity (MAD).
+        Only peaks with intensities a multiple of this SNR are considered. By default 2.
+    halfwindowsize: int, optional
+        half window size, an intensity can only be a peak if it is the highest value in a window. By default 20, for a total window size of 41.
+    """
+    def __init__(self, SNR=2, halfwindowsize=20,):
+        self.hw = halfwindowsize
+        self.SNR = SNR
+
+    def __call__(self, SpectrumObj):
+        SNR = np.median(np.abs(SpectrumObj.intensity - np.median(SpectrumObj.intensity))) * self.SNR
+
+        local_maxima = np.argmax(
+            np.lib.stride_tricks.sliding_window_view(SpectrumObj.intensity, (int(self.hw*2 + 1),)), -1
+        ) == int(self.hw)
+        s_int_local = SpectrumObj.intensity[self.hw:-self.hw][local_maxima]
+        s_mz_local = SpectrumObj.mz[self.hw:-self.hw][local_maxima]
+        return SpectrumObject(
+            intensity = s_int_local[s_int_local > SNR], 
+            mz = s_mz_local[s_int_local > SNR]
+        )
 
 class PeakFilter:
     """Pre-processing function for filtering peaks.

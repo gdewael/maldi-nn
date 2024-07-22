@@ -152,7 +152,7 @@ def main_lr(args):
     winning_model = fit_lr(X_train, y_train, winning_params)
 
     np.savez(
-        outputs,
+        args.outputs,
         **{
             "trues": y_test,
             "preds": winning_model.predict_proba(X_test),
