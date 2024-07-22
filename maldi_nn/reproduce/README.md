@@ -235,20 +235,20 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --mode {vanilla,negpeaksampler,intensitymlm,onlyclf,onlyshf}
-                        Maldi Transformer training mode, choices: {vanilla, negpeaksampler, intensitymlm, onlyclf, onlyshf} Note that
-                        negpeaksampler requires to run reproduce.estimate_peak_distr first. (default: vanilla)
+  --mode {vanilla,negpeaksampler,intensitymlm,intensitymlm_ce,mzmlm_ce,onlyclf,onlyshf}
+                        Maldi Transformer training mode, choices: {vanilla, negpeaksampler, intensitymlm, intensitymlm_ce, mzmlm_ce, onlyclf, onlyshf} Note that negpeaksampler requires to run reproduce.estimate_peak_distr first. (default: vanilla)
   --n_peaks int         Number of peaks (default: 200)
   --p float             shuffle freq (default: 0.15)
   --lmbda float         Lambda. This is the probability with which to apply the spec id loss per step. (default: 0.01)
+  --prop boolean        Sample peaks to shuffle/mask proportional to intensity. (default: False)
   --lmbda2 float        Additionally, fixed multiplier to apply to the spec id loss. (default: 1.0)
   --steps float         steps (default: 500000)
   --batch_size int      batch size per gpu, effective batch size is this value times the number of gpus. (pytorch ddp). (default: 512)
   --lr float            Learning rate. (default: 0.0005)
   --num_workers int     Number of workers in dataloader. Reduce to alleviate CPU. (default: 4)
   --devices literal_eval
-                        devices to use. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus.
-                        (default: 1)
+                        devices to use. Input an integer to specify a number of gpus or a list e.g. [1] or [0,1,3] to specify which gpus. (default: 1)
+  --mlm_ce_bins int     Only used when using `mzmlm_ce`, `intensitymlm_ce` (default: 18000)
 ```
 
 </details>
