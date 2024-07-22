@@ -62,6 +62,7 @@ mlm_logits, spectrum_embedding = model(spectrum_tensors)
 prob_noise_peak = torch.sigmoid(mlm_logits)
 ```
 
+Other Maldi Transformer model sizes are available at https://huggingface.co/gdewael/MaldiTransformer/tree/main.
 
 ## Academic Reproducibility
 
