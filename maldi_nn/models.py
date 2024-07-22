@@ -13,6 +13,7 @@ from maldi_nn.utils.drug import (
     DrugImageCNN,
 )
 import maldi_nn.nn as maldinn
+from maldi_nn.utils.metrics import *
 
 
 class MaldiLightningModule(LightningModule):
@@ -104,7 +105,7 @@ class AMRModel(MaldiLightningModule):
 
         self.scale = scaled_dot_product
 
-        self.auroc = BinaryAUROC()
+        self.validation_step_outputs = []
 
     def forward(self, batch):
         drug_embedding = self.drug_embedder(batch["drug"])
@@ -145,14 +146,28 @@ class AMRModel(MaldiLightningModule):
             batch_size=len(batch["label"]),
         )
 
-        self.auroc(logits, batch["label"])
-        self.log(
-            "val_micro_auc",
-            self.auroc,
-            on_step=False,
-            on_epoch=True,
-            batch_size=len(batch["label"]),
+        self.validation_step_outputs.append(
+            (
+                logits.cpu(),
+                batch["label"].to(logits).cpu(),
+                batch["loc"],
+                batch["drug_name"],
+            )
         )
+
+    def on_validation_epoch_end(self):
+        trues = torch.cat([v[1] for v in self.validation_step_outputs]).numpy()
+        preds = torch.cat([v[0] for v in self.validation_step_outputs]).numpy()
+        locs = np.concatenate([v[2] for v in self.validation_step_outputs])
+        drugs = np.concatenate([v[3] for v in self.validation_step_outputs])
+
+        self.log(
+            "val_roc_auc",
+            ic_roc_auc(preds, trues, locs, drugs)[0],
+            sync_dist=True,
+        )
+
+        self.validation_step_outputs.clear()
 
     def predict_step(self, batch, batch_idx):
         batch["intensity"] = batch["intensity"].to(self.dtype)
@@ -162,7 +177,8 @@ class AMRModel(MaldiLightningModule):
         logits = self(batch)
 
         return (
-            torch.stack([batch["label"].to(logits), logits], -1),
+            logits.cpu(),
+            batch["label"].to(logits).cpu(),
             batch["loc"],
             batch["drug_name"],
         )
@@ -275,6 +291,7 @@ class MaldiTransformer(MaldiLightningModule):
         lr_decay_factor=1,
         warmup_steps=2500,
         lmbda = 1,
+        proportional=False,
     ):
         super().__init__(
             lr=lr,
@@ -300,6 +317,7 @@ class MaldiTransformer(MaldiLightningModule):
         self.clf_train_p = clf_train_p
         self.p = p
         self.lmbda = lmbda
+        self.prop = proportional
 
         self.auroc = BinaryAUROC()
         self.accuracy = MulticlassAccuracy(num_classes=n_classes, average="micro")
@@ -455,16 +473,27 @@ class MaldiTransformer(MaldiLightningModule):
     def shuffler(self, batch):
         mz = batch["mz"]
         intensity = batch["intensity"]
-        n = len(mz) // 2
 
         all_indices = torch.stack(torch.where(mz)).T
 
-        shuff, pos = torch.chunk(
-            torch.randperm(len(all_indices), device=all_indices.device)[
-                : int(len(all_indices) * self.p)
-            ],
-            2,
-        )
+        if self.prop:
+            intensities_norm = (intensity / intensity.sum(1)[:, None]).reshape(-1).cpu().numpy()
+            shuff, pos = torch.chunk(
+                torch.tensor(np.random.choice(
+                    len(all_indices),
+                    int(len(all_indices) * self.p),
+                    replace = False,
+                    p = (intensities_norm / intensities_norm.sum())
+                ), device=all_indices.device), 2
+            )
+
+        else:
+            shuff, pos = torch.chunk(
+                torch.randperm(len(all_indices), device=all_indices.device)[
+                    : int(len(all_indices) * self.p)
+                ],
+                2,
+            )
         shuffled_shuff = shuff[torch.randperm(len(shuff), device=shuff.device)]
 
         indexer = (all_indices[shuff] != all_indices[shuffled_shuff])[:, 0]
