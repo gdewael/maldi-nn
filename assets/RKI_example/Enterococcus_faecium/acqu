@@ -1,0 +1,276 @@
+##TITLE=  XMASS Parameter file
+##JCAMPDX=  5.0
+##DATATYPE=  CONTINUOUS MASS SPECTRUM
+##ORIGIN=  XMASS, Bruker-Daltonics (USA) and Bruker-Daltonik (GER)
+##OWNER=  TOF User
+##SPECTROMETER|DATASYSTEM=  Bruker Flex Series
+##.SPECTROMETER TYPE=  TOF
+##.INLET=  DIRECT
+##.IONIZATION MODE=  LD+
+##$ACQMID= 0 
+##$ACQVSMA= 3 
+##$ACQVSMI= 0 
+##$ADC= 1 
+##$ANT= no 
+##$AQOP_m= 0 
+##$AQ_mod= 1 
+##$ATTEN= 79 
+##$AccE= 20000 
+##$AccE_is= 0 
+##$AppTyp= 0 
+##$BYTORDA= 0 
+##$CIDOn= no 
+##$CTOF= 0 
+##$Calmet= 0 
+##$CapEnt= -4000 
+##$CapExit= 0 
+##$CapHtr= 0 
+##$Corona= 0 
+##$Cycle= 100 
+##$Cyl= 0 
+##$DATE= 0 
+##$DCOff1= 0 
+##$DComp= no 
+##$DE= 625 
+##$DEFLON= yes 
+##$DELAY= 28000 
+##$DIGTYP= 1 
+##$DPCAL1= 0 
+##$DPMASS= 1500 
+##$DR_end= 6 
+##$DR_set= 12 
+##$DR_strt= 12 
+##$DS= 0 
+##$DTATYPE= 0 
+##$DW= 2 
+##$DataTyp= 0 
+##$DeflOff= 30 
+##$DigTrig= 100 
+##$DryFlow= 0 
+##$DrySW= 0 
+##$DryTemp= 150 
+##$EOSTime= 0.92799997 
+##$EndP= -3500 
+##$Enhance= no 
+##$EsiMode= 0 
+##$Extract= 0 
+##$FASTON= no 
+##$FOV= 20 
+##$FPCAL1= 1 
+##$FPCAL2= 0 
+##$FPCAL3= 0 
+##$FPMASS= 2466.7 
+##$FPON= no 
+##$FPSHIFT= 0 
+##$FW= 2500 
+##$Flatlin= no 
+##$FpWinHi= 0 
+##$FpWinLo= 0 
+##$GDEDLY= 0 
+##$GDEON= yes 
+##$GDETime= 0 
+##$GSpotId= 0 
+##$GSpotno= -1 
+##$Gate= 100 
+##$HITURBO= no 
+##$HPCML3= 0 
+##$HPClBHi= 0 
+##$HPClBLo= 0 
+##$HPClOrd= 0 
+##$HPClUse= no 
+##$Hpcgc0= 0 
+##$Hpcgc2= 0 
+##$IS2BNDV= 0 
+##$ISD= no 
+##$InstTyp= 0 
+##$LASP= 1 
+##$LBNDVAL= 0 
+##$LINDIS= 0 
+##$LLNSBND= no 
+##$LasFoc= -1 
+##$LftHV1= 0 
+##$LftHV2= 0 
+##$Lift1= 0 
+##$Lift2= 0 
+##$MC2= 4 
+##$ML1= 2312367.89405652 
+##$ML1_raw= 2312367.89405652 
+##$ML2= 258.016409586184 
+##$ML2_raw= 258.016409586184 
+##$ML3= -0.00386379333491893 
+##$ML3_raw= -0.00386379333491893 
+##$MW_low= 15 
+##$MapMode= 0 
+##$Masserr= 0 
+##$NBL= 1 
+##$NC= 0 
+##$NS= 16 
+##$NSdigit= 1 
+##$NebFlow= 0 
+##$NebSW= 0 
+##$NebTemp= 30 
+##$NoSHOTS= 600 
+##$OFFSET= 1000 
+##$PAPS= 0 
+##$PIEDLY= 200 
+##$POLARI= 1 
+##$PR= 1 
+##$PULSER= 10 
+##$PULSREP= 10000 
+##$Parent= 0 
+##$RBNDVAL= 0 
+##$REPHZ= 5 
+##$RFAmp= 600 
+##$RFFreq= 5 
+##$RG= 1 
+##$RLNSBND= no 
+##$Ref2= 0 
+##$RefFull= 0 
+##$ReflE= 0 
+##$Repel= 20 
+##$RunDId= 0 
+##$RunId= 0 
+##$SF= 0 
+##$SFO1= 0 
+##$SPType= 0 
+##$SW= 0 
+##$SW_p= 100 
+##$SampId= 0 
+##$Sens1= 50 
+##$Sens2= 0 
+##$Skim1= 20 
+##$SumShot= 0 
+##$Sync= 1 
+##$TD= 33000 
+##$TIB= 5 
+##$TLft= 0 
+##$TLftCor= 0 
+##$TLift= 0 
+##$TPLMS= 0 
+##$TargId= 0 
+##$TgCount= 7 
+##$Trans= 100 
+##$Trap= 45 
+##$UDeflL= 0 
+##$UGrid= 0 
+##$UIS2BND= no 
+##$ULensR= 0 
+##$UPAcc= 0 
+##$URepel= 9000 
+##$Udefl= 0 
+##$UdetL= 1.666 
+##$UdetR= 1.569 
+##$Uhim= 0 
+##$Uhimass= 0 
+##$Uis1= 20 
+##$Uis2= 18.450001 
+##$Ulens= 6.6999998 
+##$Uref_is= 0 
+##$Urefl= 0 
+##$XLens= -50 
+##$YMAX_a= 51505 
+##$YMIN_a= 0 
+##$ACQMETH= <D:\Methods\flexControlMethods\MaierMethods\ToM_200ns.par> 
+##$AQ_DATE= <2011-07-05T14:30:35.031+02:00> 
+##$AUNM= <> 
+##$AXMeth= <> 
+##$Aoffs= (0..5) 
+26 26 26 26 26 26 
+##$CALME= (0..15) 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+##$CALMR= (0..15) 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+##$CALNAM1= <> 
+##$CALNAM2= <> 
+##$CALNAM3= <> 
+##$CALNAM4= <> 
+##$CALNAM5= <> 
+##$CALNAM6= <> 
+##$CALNAM7= <> 
+##$CHIPNO= <0> 
+##$CMT1= <#GEN=Enterococcus#SPE=faecium#STR=100.6#TYP=CC5,CC21,UBA Project#UID=1352#UIE=1352#GTI=48h#TEM=36°C#AIR=aerob#MED=Caso agar#SPO=no#>
+##$CMT2= <#2011_07_05_Kaira_Prabha_24#>
+##$CMT3= <#CON=3-5 loops in 100 mkL#TRT=in 80 pct. TFA| 30 Min treatment|1:10 diluted| 1:1 HCCA|TA2 (A)#EXT=not specified#LAS=LL21 pct. 600, "LL60 pct." 10 sh. | Laser attenuator offset: 52 pct.|Range: 20 pct. (isset: Autoflex Laserdefocussed 081105.isset) neu defocussed 10xunter bisher und ToM 200ns#CAL=ProteinStandard 1 (Bruker)#CUS=RKI ZBS6#>
+##$CMT4= <> 
+##$D= (0..31) 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+##$DOMNAME= <> 
+##$Doffs= (0..5) 
+127 127 127 127 127 127 
+##$FAMeth= <> 
+##$FASTCal= <> 
+##$FCVer= <flexControl 3.0.185.0> 
+##$GEOFILE= <> 
+##$Gelcode= <> 
+##$HPCStr= <> 
+##$HPCal= (0..31) 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+##$ID_raw= <E8124A06-20C5-4512-801F-B1A08ACCCA9D> 
+##$IN= (0..31) 
+0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 
+0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 
+0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 
+0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 
+##$INSTRUM= <FLEX-PC> 
+##$InstrID= <25001.00032> 
+##$LIFTC= (0..2) 
+0 0 0 
+##$MOTPOS= <(-85675.0,-22885.0)> 
+##$Mctrlst= <> 
+##$NTBCal= <V3.0CCalibrator 1 1 0 0 -2147483648 2147483647  V1.0CHPCData  Order 0 vCoeff V1.0VectorDouble 0  c2 0 c0 0 minMass 0 maxMass 0 bUse 0 endCHPCData V3.0CTOFCalibrationConstants 28000 2 258.01640958618373 2312367.8940565214 -0.003863793334918931 2 V3.0CTOFCalibrationConstants 28000 2 443.49157006830018 2339961.4983302024 0.014635014530734677 2  > 
+##$NTBCalr= <V3.0CCalibrator 1 1 0 0 -2147483648 2147483647  V1.0CHPCData  Order 0 vCoeff V1.0VectorDouble 0  c2 0 c0 0 minMass 0 maxMass 0 bUse 0 endCHPCData V3.0CTOFCalibrationConstants 28000 2 258.01640958618373 2312367.8940565214 -0.003863793334918931 2 V3.0CTOFCalibrationConstants 28000 2 443.49157006830018 2339961.4983302024 0.014635014530734677 2> 
+##$OS9PATH= <> 
+##$OpId= <BDAL@DE> 
+##$P= (0..31) 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+##$PARNM= <> 
+##$PATCHNO= <E6> 
+##$REM= <S:\herforts\Laschp\05-07-2011\Enterococus feacium\0_E6\1\1SLin> 
+##$REM= <C:\MicrobeMSDir\Enterococcus faecium 100.6\0_A0\1\1SLin>
+##$REM= <C:\MicrobeMSDir\Enterococcus faecium 100.6\0_A0\1\1SLin>
+##$REM= <C:\MicrobeMSDir\Enterococcus faecium 100.6\0_A0\1\1SLin>
+##$PATH= <C:\MicrobeMSDir\Enterococcus faecium 100.6\0_A0\1\1SLin>
+##$PDELAY= (0..3) 
+10 10 10 10 
+##$PDURA= (0..3) 
+10 10 10 10 
+##$PEPURL= <> 
+##$PLMSC= (0..2) 
+0 0 0 
+##$PULPROG= <> 
+##$PostPr= <> 
+##$QS= (0..7) 
+83 83 83 83 83 83 83 83 
+##$RUNNM= <> 
+##$SMOPTS= (0..15) 
+0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 
+##$SPOTNO= <E6> 
+##$TgIDS= <T_0209520_0020395_7> 
+##$TgSer= <0020395> 
+##$TgTyp= <0209520> 
+##$VDLIST= <DDDDDDDDDDDDDDD> 
+##$VOLTNM= <> 
+##$WEND= (0..3) 
+30000 30000 30000 30000 
+##$WINY= (0..3) 
+3 3 3 3 
+##$WSTART= (0..3) 
+0 0 0 0 
+##$Warplc1= <> 
+##$Warplc2= <> 
+##$XACQVS= <3.0> 
+##$Xml1= <> 
+##END=
+

@@ -19,6 +19,50 @@ In case this package loses backward-compatibility with more-recent versions of P
 
 You may need to [install PyTorch](https://pytorch.org/get-started/locally/) before running this command in order to ensure the right CUDA kernels for your system are installed
 
+
+## Quick start
+
+We have uploaded some example spectra from the RKI database and our pre-trained models in the `assets` folder.
+
+To quickly start playing around with our models, follow:
+
+In bash:
+```bash
+pip install maldi-nn
+git clone https://github.com/gdewael/maldi-nn.git
+```
+
+In Python:
+```python
+from maldi_nn.spectrum import *
+from maldi_nn.models import MaldiTransformer
+import torch
+spectrum = SpectrumObject.from_bruker(
+    "./maldi-nn/assets/RKI_example/Bacillus_anthracis/acqu",
+    "./maldi-nn/assets/RKI_example/Bacillus_anthracis/fid"
+    )
+
+preprocessor = SequentialPreprocessor(
+    VarStabilizer(method="sqrt"),
+    Smoother(halfwindow=10),
+    BaselineCorrecter(method="SNIP", snip_n_iter=20),
+    Trimmer(),
+    PersistenceTransformer(extract_nonzero=True),
+    Normalizer(sum=1),
+    PeakFilter(max_number=200),
+)
+
+spectrum_preprocessed = preprocessor(spectrum)
+spectrum_tensors = spectrum_preprocessed.torch()
+
+model = MaldiTransformer.load_from_checkpoint("../../maldi-nn/assets/MaldiTransformerM.ckpt").eval().cpu()
+
+mlm_logits, spectrum_embedding = model(spectrum_tensors)
+
+prob_noise_peak = torch.sigmoid(mlm_logits)
+```
+
+
 ## Academic Reproducibility
 
 This package contains all code and scripts to reproduce: ["An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks"](https://doi.org/10.7554/eLife.93242.1), and ["Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction"](https://www.biorxiv.org/content/10.1101/2024.01.18.576189v1).

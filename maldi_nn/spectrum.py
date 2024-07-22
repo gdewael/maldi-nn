@@ -156,7 +156,10 @@ class SpectrumObject:
 
     def torch(self):
         """Converts spectrum to dict of tensors"""
-        return {"mz": torch.tensor(self.mz), "intensity": torch.tensor(self.intensity)}
+        return {
+            "mz": torch.tensor(self.mz).unsqueeze(0).to(torch.float),
+            "intensity": torch.tensor(self.intensity).unsqueeze(0).to(torch.float)
+        }
 
 
 class Binner:
