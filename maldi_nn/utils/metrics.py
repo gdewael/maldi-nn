@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import roc_auc_score, recall_score
 
+
 def ic_roc_auc(preds, trues, locs, drugs):
     locs = locs.astype(bytes)
     t = []
@@ -22,6 +23,7 @@ def macro_roc_auc(preds, trues, locs, drugs):
 
     return np.mean(t), np.array(t)
 
+
 def prec_at_1_neg(preds, trues, locs, drugs):
     r, c = np.unique(locs, return_counts=True)
     pos = 0
@@ -34,10 +36,12 @@ def prec_at_1_neg(preds, trues, locs, drugs):
             total += 1
     return (total - pos) / total
 
-def sigmoid(x):
-    return 1/(1 + np.exp(-x))
 
-def ic_sensitivity(preds, trues, locs, drugs, threshold = 0.5):
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def ic_sensitivity(preds, trues, locs, drugs, threshold=0.5):
     locs = locs.astype(bytes)
     t = []
     for l in np.unique(locs):
@@ -47,12 +51,13 @@ def ic_sensitivity(preds, trues, locs, drugs, threshold = 0.5):
 
     return np.mean(t), np.array(t)
 
-def ic_specificity(preds, trues, locs, drugs, threshold = 0.5):
+
+def ic_specificity(preds, trues, locs, drugs, threshold=0.5):
     locs = locs.astype(bytes)
     t = []
     for l in np.unique(locs):
         sub = locs == l
         if not (trues[sub] == 1).all():
-            t.append(recall_score(1-trues[sub], sigmoid(preds[sub]) < threshold))
+            t.append(recall_score(1 - trues[sub], sigmoid(preds[sub]) < threshold))
 
     return np.mean(t), np.array(t)

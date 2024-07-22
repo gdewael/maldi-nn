@@ -14,6 +14,7 @@ import ast
 import h5torch
 from maldi_nn.utils.metrics import *
 
+
 def boolean(v):
     if isinstance(v, bool):
         return v
@@ -29,6 +30,7 @@ class CustomFormatter(
     argparse.ArgumentDefaultsHelpFormatter, argparse.MetavarTypeHelpFormatter
 ):
     pass
+
 
 size_to_layer_dims = {
     "S": [256, 128],

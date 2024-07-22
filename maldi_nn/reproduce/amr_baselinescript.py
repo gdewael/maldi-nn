@@ -219,7 +219,6 @@ def main_MLP(args):
                     preds_test.append(model(batch).numpy())
                 preds_test_all.append(np.concatenate(preds_test))
 
-        
             os.system("rm -r %s" % ("/".join(val_ckpt.best_model_path.split("/")[:-2])))
 
         # final model
@@ -242,6 +241,7 @@ def main_MLP(args):
             "drug_names": np.concatenate(drug_names),
         }
     )
+
 
 def main_lr(args):
     f = h5torch.File(args.path, "r")
@@ -294,7 +294,7 @@ def main_lr(args):
         # tune
         lr_grid = ParameterGrid(
             {
-                "norm": ["passthrough", "standardscaler"], 
+                "norm": ["passthrough", "standardscaler"],
                 "penalty": ["l2"],
                 "C": 10.0 ** np.arange(-3, 4),
             }
@@ -375,6 +375,7 @@ def main_lr(args):
             "drug_names": np.concatenate(drug_names),
         }
     )
+
 
 def main_xgb(args):
     f = h5torch.File(args.path, "r")
@@ -466,6 +467,7 @@ def main_xgb(args):
         }
     )
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Training script for non-recommender AMR baselines.",
@@ -483,7 +485,7 @@ def main():
         "modeltype",
         type=str,
         metavar="modeltype",
-        choices=["MLP","lr", "xgb"],
+        choices=["MLP", "lr", "xgb"],
         help="Which modeltype to use as baseline, choices: {%(choices)s}",
     )
 
@@ -508,6 +510,6 @@ def main():
     elif args.modeltype == "xgb":
         main_xgb(args)
 
+
 if __name__ == "__main__":
     main()
-    

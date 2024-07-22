@@ -12,11 +12,12 @@ from maldi_nn.utils.data import DRIAMSAMRDataModule
 from maldi_nn.reproduce.modules import (
     MaldiTransformerNegSampler,
     MaldiTransformerOnlyClf,
-    MaldiTransformerMaskMSE
+    MaldiTransformerMaskMSE,
 )
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 import torch
+
 
 def boolean(v):
     if isinstance(v, bool):
@@ -34,8 +35,9 @@ class CustomFormatter(
 ):
     pass
 
-size_to_layer_dims ={
-    "mlp" : {
+
+size_to_layer_dims = {
+    "mlp": {
         "S": [256, 128],
         "M": [512, 256, 128],
         "L": [1024, 512, 256, 128],
@@ -47,7 +49,7 @@ size_to_layer_dims ={
         "M": [184, 6],
         "L": [232, 8],
         "XL": [304, 10],
-    }
+    },
 }
 
 drug_encoder_args = {
@@ -59,6 +61,7 @@ drug_encoder_args = {
     "gru": {"alphabet": "deepsmiles"},
     "img": {"size": (128, 128), "normalize": True, "inverse": True},
 }
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -138,9 +141,13 @@ def main():
 
     f = h5torch.File(args.path).to_dict()
 
-    s, c = np.unique(f["0/species"][np.unique(f["central/indices"][0][f["unstructured/split"][:] == b"A_train"])], return_counts = True)
+    s, c = np.unique(
+        f["0/species"][
+            np.unique(f["central/indices"][0][f["unstructured/split"][:] == b"A_train"])
+        ],
+        return_counts=True,
+    )
     set_ = s[np.argsort(c)[::-1]][:25].view(np.ndarray)
-
 
     locs_final = []
     drug_names_final = []
@@ -151,11 +158,19 @@ def main():
         print(s, "-" * 100)
         rows_with_species = np.where(f["0/species"][:] == int(s))[0]
 
-        train = np.logical_and(np.isin(f["central/indices"][:][0], rows_with_species), f["unstructured/split"][:] == b"A_train")
-        val = np.logical_and(np.isin(f["central/indices"][:][0], rows_with_species), f["unstructured/split"][:] == b"A_val")
-        test = np.logical_and(np.isin(f["central/indices"][:][0], rows_with_species), f["unstructured/split"][:] == b"A_test")
+        train = np.logical_and(
+            np.isin(f["central/indices"][:][0], rows_with_species),
+            f["unstructured/split"][:] == b"A_train",
+        )
+        val = np.logical_and(
+            np.isin(f["central/indices"][:][0], rows_with_species),
+            f["unstructured/split"][:] == b"A_val",
+        )
+        test = np.logical_and(
+            np.isin(f["central/indices"][:][0], rows_with_species),
+            f["unstructured/split"][:] == b"A_test",
+        )
 
-        
         train_indices = np.where(train)[0]
         val_indices = np.where(val)[0]
         test_indices = np.where(test)[0]
@@ -166,12 +181,16 @@ def main():
             drug_encoder_args=drug_encoder_args[args.drug_embedder],
             batch_size=128,
             n_workers=args.num_workers,
-            preprocessor=(None if args.spectrum_embedder == "mlp" else PeakFilter(max_number=args.trf_n_peaks)),
+            preprocessor=(
+                None
+                if args.spectrum_embedder == "mlp"
+                else PeakFilter(max_number=args.trf_n_peaks)
+            ),
             min_spectrum_len=None,
             in_memory=True,
-            train_indices = train_indices,
-            val_indices = val_indices,
-            test_indices = test_indices,
+            train_indices=train_indices,
+            val_indices=val_indices,
+            test_indices=test_indices,
         )
         dm.setup(None)
 
@@ -186,7 +205,12 @@ def main():
                 "layer_dims": [],
                 "dropout": 0.2,
             },
-            "ecfp": {"n_inputs": 512, "n_outputs": 64, "layer_dims": [], "dropout": 0.2},
+            "ecfp": {
+                "n_inputs": 512,
+                "n_outputs": 64,
+                "layer_dims": [],
+                "dropout": 0.2,
+            },
             "cnn": {
                 "vocab_size": len(dm.drug_encoder.alphabet_dict),
                 "dim": 64,
@@ -200,7 +224,12 @@ def main():
                 "n_head": 8,
             },
             "gru": {"vocab_size": len(dm.drug_encoder.alphabet_dict), "hidden_dim": 64},
-            "img": {"stem_downsample": 2, "kernel_size": 5, "hidden_dim": 32, "depth": 2},
+            "img": {
+                "stem_downsample": 2,
+                "kernel_size": 5,
+                "hidden_dim": 32,
+                "depth": 2,
+            },
         }
 
         if args.spectrum_embedder == "mlp":
@@ -226,7 +255,6 @@ def main():
                     modeltype = MaldiTransformerNegSampler
                 elif args.trf_ckpt_modeltype == "onlyclf":
                     modeltype = MaldiTransformerOnlyClf
-                
 
                 malditransformer = modeltype.load_from_checkpoint(args.trf_ckpt_path)
                 spectrum_kwargs["depth"] = malditransformer.hparams.depth
@@ -255,11 +283,12 @@ def main():
                 pretrained_dict = malditransformer.transformer.state_dict()
                 model_state_dict = model.spectrum_embedder.state_dict()
                 pretrained_dict = {
-                    k: v for k, v in pretrained_dict.items() if not k.startswith("output_head")
+                    k: v
+                    for k, v in pretrained_dict.items()
+                    if not k.startswith("output_head")
                 }
                 model_state_dict.update(pretrained_dict)
                 model.spectrum_embedder.load_state_dict(model_state_dict)
-
 
             val_ckpt = ModelCheckpoint(monitor="val_roc_auc", mode="max")
             callbacks = [
@@ -268,7 +297,13 @@ def main():
             ]
             logger = TensorBoardLogger(
                 os.path.join(args.logs_path, str(s)),
-                name="amr%s_%s_%s_%s" % (args.spectrum_embedder, args.drug_embedder, args.spectrum_embedder_size, lr),
+                name="amr%s_%s_%s_%s"
+                % (
+                    args.spectrum_embedder,
+                    args.drug_embedder,
+                    args.spectrum_embedder_size,
+                    lr,
+                ),
             )
 
             trainer = Trainer(
@@ -285,7 +320,9 @@ def main():
 
             # validation
             p = trainer.predict(
-                model, dataloaders=dm.val_dataloader(), ckpt_path=val_ckpt.best_model_path
+                model,
+                dataloaders=dm.val_dataloader(),
+                ckpt_path=val_ckpt.best_model_path,
             )
 
             trues = torch.cat([v[1] for v in p]).numpy()
@@ -297,7 +334,9 @@ def main():
 
             # test
             p = trainer.predict(
-                model, dataloaders=dm.test_dataloader(), ckpt_path=val_ckpt.best_model_path
+                model,
+                dataloaders=dm.test_dataloader(),
+                ckpt_path=val_ckpt.best_model_path,
             )
 
             trues = torch.cat([v[1] for v in p]).numpy()
@@ -316,13 +355,13 @@ def main():
         preds_final.append(preds_test_per_lr_[max_index])
         trues_final.append(trues_test_per_lr_[max_index])
 
-        with open(os.path.join(args.logs_path, args.logging_file).rstrip(".npz")+".txt", "a") as file:
+        with open(
+            os.path.join(args.logs_path, args.logging_file).rstrip(".npz") + ".txt", "a"
+        ) as file:
             file.write(
-                "%s\t%s\t%.5f\n"
-                % (s, ckpt_paths[max_index], valscores_all[max_index])
+                "%s\t%s\t%.5f\n" % (s, ckpt_paths[max_index], valscores_all[max_index])
             )
 
-        
     np.savez(
         os.path.join(args.logs_path, args.logging_file),
         **{
@@ -332,6 +371,7 @@ def main():
             "drug_names": np.concatenate(drug_names_final),
         }
     )
+
 
 if __name__ == "__main__":
     main()

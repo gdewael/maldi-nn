@@ -25,14 +25,15 @@ def main():
     ):
         pass
 
-
     parser = argparse.ArgumentParser(
         description="Training script for domain adaptation of a Maldi Transformer.",
         formatter_class=CustomFormatter,
     )
 
     parser.add_argument("path", type=str, metavar="path", help="path to h5torch file.")
-    parser.add_argument("logs_path", type=str, metavar="logs_path", help="path to logs.")
+    parser.add_argument(
+        "logs_path", type=str, metavar="logs_path", help="path to logs."
+    )
     parser.add_argument(
         "spectrum_embedder",
         type=str,
@@ -72,7 +73,7 @@ def main():
     parser.add_argument(
         "--lmbda2",
         type=float,
-        default=1.,
+        default=1.0,
         help="Additionally, fixed multiplier to apply to the spec id loss.",
     )
     parser.add_argument(
@@ -117,7 +118,6 @@ def main():
     )
     dm.setup(None)
 
-
     model = MaldiTransformer(
         size_to_layer_dims[args.spectrum_embedder][1],
         size_to_layer_dims[args.spectrum_embedder][0],
@@ -127,12 +127,12 @@ def main():
         p=args.p,
         clf=True,
         clf_train_p=args.lmbda,
-        lmbda = args.lmbda2,
+        lmbda=args.lmbda2,
         lr=args.lr,
         weight_decay=0,
         lr_decay_factor=1,
         warmup_steps=2500,
-        )
+    )
 
     if args.ckpt_path != "None":
         malditransformer = MaldiTransformer.load_from_checkpoint(args.ckpt_path)
@@ -143,7 +143,7 @@ def main():
         }
         model_state_dict.update(pretrained_dict)
         model.transformer.load_state_dict(model_state_dict)
-        
+
         model.output_head.load_state_dict(malditransformer.output_head.state_dict())
 
     callbacks = [
@@ -170,6 +170,7 @@ def main():
     )
 
     trainer.fit(model, dm)
+
 
 if __name__ == "__main__":
     main()

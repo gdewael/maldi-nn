@@ -19,10 +19,12 @@ from torchmetrics.functional.classification import multiclass_accuracy
 from sklearn.model_selection import ParameterGrid
 import argparse
 
+
 class CustomFormatter(
     argparse.ArgumentDefaultsHelpFormatter, argparse.MetavarTypeHelpFormatter
 ):
     pass
+
 
 def read_data(path):
     dm = SpeciesClfDataModule(
@@ -34,7 +36,6 @@ def read_data(path):
     )
     dm.setup(None)
 
-
     X_train = torch.stack([b["intensity"] for b in dm.train]).numpy()
     y_train = np.array([b["species"] for b in dm.train])
     X_val = torch.stack([b["intensity"] for b in dm.val]).numpy()
@@ -43,6 +44,7 @@ def read_data(path):
     y_test = np.array([b["species"] for b in dm.test])
     test_locs = np.array([b["0/loc"] for b in dm.test])
     return X_train, X_val, X_test, y_train, y_val, y_test, test_locs
+
 
 def fit_knn(X_train, y_train, params):
     if params["norm"] == "standardscaler":
@@ -59,11 +61,12 @@ def fit_knn(X_train, y_train, params):
         )
     else:
         model = KNeighborsClassifier(
-                    n_neighbors=params["n_neighbors"],
-                )
-        
+            n_neighbors=params["n_neighbors"],
+        )
+
     model.fit(X_train, y_train)
     return model
+
 
 def fit_lr(X_train, y_train, params):
     if params["norm"] == "standardscaler":
@@ -89,8 +92,9 @@ def fit_lr(X_train, y_train, params):
     model.fit(X_train, y_train)
     return model
 
+
 def fit_rf(X_train, y_train, params):
-    model = RandomForestClassifier(**params, n_estimators = 200, n_jobs = 12)
+    model = RandomForestClassifier(**params, n_estimators=200, n_jobs=12)
     model.fit(X_train, y_train)
     return model
 
@@ -110,9 +114,23 @@ def main_knn(args):
         model = fit_knn(X_train, y_train, params)
         preds = torch.tensor(model.predict_proba(X_val))
 
-        print(params, multiclass_accuracy(preds, torch.tensor(y_val), num_classes = preds.shape[1], average="micro"), flush = True)
+        print(
+            params,
+            multiclass_accuracy(
+                preds, torch.tensor(y_val), num_classes=preds.shape[1], average="micro"
+            ),
+            flush=True,
+        )
         scores.append(
-            [params, multiclass_accuracy(preds, torch.tensor(y_val), num_classes = preds.shape[1], average="micro")]
+            [
+                params,
+                multiclass_accuracy(
+                    preds,
+                    torch.tensor(y_val),
+                    num_classes=preds.shape[1],
+                    average="micro",
+                ),
+            ]
         )
 
     max_index = np.argmax([j[-1] for j in scores])
@@ -129,6 +147,7 @@ def main_knn(args):
         }
     )
 
+
 def main_lr(args):
     X_train, X_val, X_test, y_train, y_val, y_test, test_locs = read_data(args.path)
     lr_grid = ParameterGrid(
@@ -142,9 +161,23 @@ def main_lr(args):
         model = fit_lr(X_train, y_train, params)
         preds = torch.tensor(model.predict_proba(X_val))
 
-        print(params, multiclass_accuracy(preds, torch.tensor(y_val), num_classes = preds.shape[1], average="micro"), flush = True)
+        print(
+            params,
+            multiclass_accuracy(
+                preds, torch.tensor(y_val), num_classes=preds.shape[1], average="micro"
+            ),
+            flush=True,
+        )
         scores.append(
-            [params, multiclass_accuracy(preds, torch.tensor(y_val), num_classes = preds.shape[1], average="micro")]
+            [
+                params,
+                multiclass_accuracy(
+                    preds,
+                    torch.tensor(y_val),
+                    num_classes=preds.shape[1],
+                    average="micro",
+                ),
+            ]
         )
 
     max_index = np.argmax([j[-1] for j in scores])
@@ -160,12 +193,13 @@ def main_lr(args):
         }
     )
 
+
 def main_rf(args):
     X_train, X_val, X_test, y_train, y_val, y_test, test_locs = read_data(args.path)
 
     rf_grid = ParameterGrid(
         {
-            "max_depth" : [25, 50, 75, 100],
+            "max_depth": [25, 50, 75, 100],
             "min_samples_split": [2, 5, 10],
             "max_features": [10, 25, 50, 100],
         }
@@ -176,9 +210,23 @@ def main_rf(args):
         model = fit_rf(X_train, y_train, params)
         preds = torch.tensor(model.predict_proba(X_val))
 
-        print(params, multiclass_accuracy(preds, torch.tensor(y_val), num_classes = preds.shape[1], average="micro"), flush = True)
+        print(
+            params,
+            multiclass_accuracy(
+                preds, torch.tensor(y_val), num_classes=preds.shape[1], average="micro"
+            ),
+            flush=True,
+        )
         scores.append(
-            [params, multiclass_accuracy(preds, torch.tensor(y_val), num_classes = preds.shape[1], average="micro")]
+            [
+                params,
+                multiclass_accuracy(
+                    preds,
+                    torch.tensor(y_val),
+                    num_classes=preds.shape[1],
+                    average="micro",
+                ),
+            ]
         )
 
     max_index = np.argmax([j[-1] for j in scores])
@@ -194,6 +242,8 @@ def main_rf(args):
             "locs": test_locs,
         }
     )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Training script for species identification baselines. Returns an npz file with predictions for the test set.",
@@ -224,7 +274,6 @@ def main():
     elif args.modeltype == "rf":
         main_rf(args)
 
+
 if __name__ == "__main__":
     main()
-    
-    

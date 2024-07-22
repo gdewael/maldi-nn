@@ -118,14 +118,26 @@ class MaldiTransformerOnlyClf(MaldiLightningModule):
 
 
 class MaskingPlugin:
-    def __init__(self, prob=0.15, unchanged=0.2, discretize=False, mask_mz=False, n_bins=18_000,):
+    def __init__(
+        self,
+        prob=0.15,
+        unchanged=0.2,
+        discretize=False,
+        mask_mz=False,
+        n_bins=18_000,
+    ):
         self.p = prob
         self.u = unchanged
 
         if mask_mz:
-            self.discretizer = lambda x : np.digitize(x, np.arange(2000, 20_000.01, 18_000/n_bins)) - 1
+            self.discretizer = (
+                lambda x: np.digitize(x, np.arange(2000, 20_000.01, 18_000 / n_bins))
+                - 1
+            )
         else:
-            self.discretizer = lambda x : np.digitize(x, np.arange(0, 1+1e-8, 1/n_bins)) - 1
+            self.discretizer = (
+                lambda x: np.digitize(x, np.arange(0, 1 + 1e-8, 1 / n_bins)) - 1
+            )
         self.discretize = discretize
         self.mask_mz = mask_mz
 
@@ -137,13 +149,13 @@ class MaskingPlugin:
             to_mask_group = "intensity"
         else:
             to_mask_group = "mz"
-        
+
         spectrum["intensity_true"] = spectrum[to_mask_group].clone()
         spectrum[to_mask_group].masked_fill_(
             train_indices & ~unchanged_indices, torch.nan
         )
         if self.discretize:
-                spectrum["intensity_true"] = self.discretizer(spectrum["intensity_true"])
+            spectrum["intensity_true"] = self.discretizer(spectrum["intensity_true"])
 
         spectrum["train_indices"] = train_indices
         return spectrum
@@ -296,13 +308,15 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
         self.mask_mz = mask_mz
         if mask_mz:
             prop = np.loadtxt(files("maldi_nn.utils").joinpath("prop.txt"))
-            mzs = np.arange(2000, 20000) + .5
+            mzs = np.arange(2000, 20000) + 0.5
 
             emb = self.transformer.transformer.layers[0].plugin(
-                torch.zeros(1, 18000, self.hparams.dim), 
-                pos = torch.tensor(mzs).unsqueeze(0)
+                torch.zeros(1, 18000, self.hparams.dim),
+                pos=torch.tensor(mzs).unsqueeze(0),
             )[0]
-            self.mask_embedding = nn.Parameter((emb * torch.tensor(prop).unsqueeze(-1)).sum(0))
+            self.mask_embedding = nn.Parameter(
+                (emb * torch.tensor(prop).unsqueeze(-1)).sum(0)
+            )
 
         self.n_species = n_classes
         self.clf = clf
@@ -322,16 +336,23 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
             z = self.transformer.embed(batch["intensity"])
 
             z = self.transformer.transformer.layers[0].plugin.mod_x(
-                z, pos=batch["mz"], mask=~nans,
-            )
-            
-            z[torch.nn.functional.pad(nans, (1, 0), value = False)] = self.mask_embedding.to(z)
-
-            z = self.transformer.transformer.layers[0].attn(
-                self.transformer.transformer.layers[0].norm(z),
+                z,
                 pos=batch["mz"],
-                mask=None
-            ) + z
+                mask=~nans,
+            )
+
+            z[
+                torch.nn.functional.pad(nans, (1, 0), value=False)
+            ] = self.mask_embedding.to(z)
+
+            z = (
+                self.transformer.transformer.layers[0].attn(
+                    self.transformer.transformer.layers[0].norm(z),
+                    pos=batch["mz"],
+                    mask=None,
+                )
+                + z
+            )
 
             z = self.transformer.transformer.layers[0].ff(z)
 
@@ -341,7 +362,6 @@ class MaldiTransformerMaskMSE(MaldiLightningModule):
 
         else:
             z = self.transformer(batch)
-
 
         mlm_logits = self.output_head(z[:, 1:])
         if self.regress:

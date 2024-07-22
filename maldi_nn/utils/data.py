@@ -62,11 +62,15 @@ class MALDITOFDataset(h5torch.Dataset):
         spectrum = {
             "intensity": torch.tensor(spectrum.intensity).float(),
             "mz": torch.tensor(spectrum.mz),
-            "species" : sample["central"],
-            "0/loc" : sample["0/loc"].astype(str)
+            "species": sample["central"],
+            "0/loc": sample["0/loc"].astype(str),
         }
 
-        sample = {k: v for k, v in sample.items() if k not in ["0/intensity", "0/mz", "central"]}
+        sample = {
+            k: v
+            for k, v in sample.items()
+            if k not in ["0/intensity", "0/mz", "central"]
+        }
         return sample | spectrum
 
 
@@ -123,16 +127,14 @@ class DRIAMSAMRDataModule(MaldiDataModule):
         test_indices=None,
     ):
         super().__init__(batch_size=batch_size, n_workers=n_workers)
-        
+
         if isinstance(path, str):
             path = h5torch.File(path)
-        
+
         if in_memory and (not isinstance(path, h5torch.file.h5pyDict)):
             path = path.to_dict()
 
-        smiles_list = sorted(
-            list(set(list(path["1/drug_smiles"][:].astype(str))))
-        )
+        smiles_list = sorted(list(set(list(path["1/drug_smiles"][:].astype(str)))))
         if drug_encoder == "onehot":
             self.drug_encoder = SmilesToIndex(smiles_list)
         elif drug_encoder == "ecfp":
@@ -168,43 +170,43 @@ class DRIAMSAMRDataModule(MaldiDataModule):
         self.path = path
 
     def setup(self, stage):
-
         f = self.path
-
 
         if self.min_spectrum_len is not None:
             lens_all = np.array([len(tt) for tt in f["0/intensity"][:]])
 
-        
         if self.train_indices is None:
             trainmatcher = np.vectorize(lambda x: bool(re.match("A_train", x)))
-            train_indices = np.where(trainmatcher(f["unstructured/split"][:].astype(str)))[
-                0
-            ]
+            train_indices = np.where(
+                trainmatcher(f["unstructured/split"][:].astype(str))
+            )[0]
             if self.min_spectrum_len is not None:
                 lens = lens_all[f["central"]["indices"][0][train_indices]]
                 train_indices = train_indices[lens > self.min_spectrum_len]
         else:
             train_indices = self.train_indices
-        
+
         if self.val_indices is None:
             valmatcher = np.vectorize(lambda x: bool(re.match("A_val", x)))
-            val_indices = np.where(valmatcher(f["unstructured/split"][:].astype(str)))[0]
+            val_indices = np.where(valmatcher(f["unstructured/split"][:].astype(str)))[
+                0
+            ]
             if self.min_spectrum_len is not None:
                 lens = lens_all[f["central"]["indices"][0][val_indices]]
                 val_indices = val_indices[lens > self.min_spectrum_len]
         else:
             val_indices = self.val_indices
-        
+
         if self.test_indices is None:
             testmatcher = np.vectorize(lambda x: bool(re.match("A_test", x)))
-            test_indices = np.where(testmatcher(f["unstructured/split"][:].astype(str)))[0]
+            test_indices = np.where(
+                testmatcher(f["unstructured/split"][:].astype(str))
+            )[0]
             if self.min_spectrum_len is not None:
                 lens = lens_all[f["central"]["indices"][0][test_indices]]
                 test_indices = test_indices[lens > self.min_spectrum_len]
         else:
             test_indices = self.test_indices
-
 
         self.train = h5torch.Dataset(
             f,
@@ -275,17 +277,11 @@ class DRIAMSSpectrumDataModule(MaldiDataModule):
         )[0]
 
         trainmatcher = np.vectorize(lambda x: bool(re.match("B_", x)))
-        B_ = np.where(
-            trainmatcher(f["unstructured/split"][:].astype(str))
-        )[0]
+        B_ = np.where(trainmatcher(f["unstructured/split"][:].astype(str)))[0]
         trainmatcher = np.vectorize(lambda x: bool(re.match("C_", x)))
-        C_ = np.where(
-            trainmatcher(f["unstructured/split"][:].astype(str))
-        )[0]
+        C_ = np.where(trainmatcher(f["unstructured/split"][:].astype(str)))[0]
         trainmatcher = np.vectorize(lambda x: bool(re.match("D_", x)))
-        D_ = np.where(
-            trainmatcher(f["unstructured/split"][:].astype(str))
-        )[0]
+        D_ = np.where(trainmatcher(f["unstructured/split"][:].astype(str)))[0]
         self.train_indices = np.concatenate([self.train_indices, B_, C_, D_])
 
         valmatcher = np.vectorize(lambda x: bool(re.match("A_val", x)))

@@ -12,9 +12,10 @@ from maldi_nn.reproduce.modules import (
     DRIAMSSpectrumDataModuleWithNoiser,
     MaldiTransformerNegSampler,
     MaldiTransformerOnlyClf,
-    MaldiTransformerMaskMSE
+    MaldiTransformerMaskMSE,
 )
 import h5torch
+
 
 def boolean(v):
     if isinstance(v, bool):
@@ -28,7 +29,6 @@ def boolean(v):
 
 
 def main():
-
     class CustomFormatter(
         argparse.ArgumentDefaultsHelpFormatter, argparse.MetavarTypeHelpFormatter
     ):
@@ -40,7 +40,9 @@ def main():
     )
 
     parser.add_argument("path", type=str, metavar="path", help="path to h5torch file.")
-    parser.add_argument("logs_path", type=str, metavar="logs_path", help="path to logs.")
+    parser.add_argument(
+        "logs_path", type=str, metavar="logs_path", help="path to logs."
+    )
     parser.add_argument(
         "spectrum_embedder",
         type=str,
@@ -53,9 +55,17 @@ def main():
         "--mode",
         type=str,
         default="vanilla",
-        choices=["vanilla", "negpeaksampler", "intensitymlm", "intensitymlm_ce", "mzmlm_ce", "onlyclf", "onlyshf"],
+        choices=[
+            "vanilla",
+            "negpeaksampler",
+            "intensitymlm",
+            "intensitymlm_ce",
+            "mzmlm_ce",
+            "onlyclf",
+            "onlyshf",
+        ],
         help="Maldi Transformer training mode, choices: {%(choices)s} Note that negpeaksampler requires to run reproduce.estimate_peak_distr first.",
-        )
+    )
 
     parser.add_argument(
         "--n_peaks",
@@ -77,7 +87,7 @@ def main():
         default=1 / 100,
         help="Lambda. This is the probability with which to apply the spec id loss per step.",
     )
-    
+
     parser.add_argument(
         "--prop",
         type=boolean,
@@ -88,7 +98,7 @@ def main():
     parser.add_argument(
         "--lmbda2",
         type=float,
-        default=1.,
+        default=1.0,
         help="Additionally, fixed multiplier to apply to the spec id loss.",
     )
 
@@ -175,7 +185,13 @@ def main():
             min_spectrum_len=args.n_peaks,
             in_memory=True,
             exclude_nans=False,
-            noiser=MaskingPlugin(prob=args.p, unchanged=0.2, discretize=True, mask_mz=False, n_bins=args.mlm_ce_bins),
+            noiser=MaskingPlugin(
+                prob=args.p,
+                unchanged=0.2,
+                discretize=True,
+                mask_mz=False,
+                n_bins=args.mlm_ce_bins,
+            ),
         )
     elif args.mode == "mzmlm_ce":
         dm = DRIAMSSpectrumDataModuleWithNoiser(
@@ -186,7 +202,13 @@ def main():
             min_spectrum_len=args.n_peaks,
             in_memory=True,
             exclude_nans=False,
-            noiser=MaskingPlugin(prob=args.p, unchanged=0.2, discretize=True, mask_mz=True, n_bins=args.mlm_ce_bins),
+            noiser=MaskingPlugin(
+                prob=args.p,
+                unchanged=0.2,
+                discretize=True,
+                mask_mz=True,
+                n_bins=args.mlm_ce_bins,
+            ),
         )
     else:
         dm = DRIAMSSpectrumDataModule(
@@ -199,21 +221,20 @@ def main():
             exclude_nans=(True if args.mode == "onlyclf" else False),
         )
 
-
     modeltype = MaldiTransformer
     model_kwargs = {
-        "n_classes" : dm.n_species - 1,
-        "n_heads" : 8,
-        "dropout" : 0.2,
-        "p" : args.p,
-        "clf" : True,
-        "clf_train_p" : args.lmbda,
-        "lmbda" : args.lmbda2,
-        "lr" : args.lr,
-        "weight_decay" : 0,
-        "lr_decay_factor" : 1,
-        "warmup_steps" : 2500,
-        "proportional" : args.prop,
+        "n_classes": dm.n_species - 1,
+        "n_heads": 8,
+        "dropout": 0.2,
+        "p": args.p,
+        "clf": True,
+        "clf_train_p": args.lmbda,
+        "lmbda": args.lmbda2,
+        "lr": args.lr,
+        "weight_decay": 0,
+        "lr_decay_factor": 1,
+        "warmup_steps": 2500,
+        "proportional": args.prop,
     }
 
     if args.mode == "onlyclf":
@@ -247,17 +268,18 @@ def main():
     elif args.mode == "onlyshf":
         model_kwargs["clf"] = False
 
-
     model = modeltype(
         size_to_layer_dims[args.spectrum_embedder][1],
         size_to_layer_dims[args.spectrum_embedder][0],
         **model_kwargs,
     )
 
-
     if args.mode == "onlyclf":
         val_ckpt = ModelCheckpoint(monitor="val_clfacc", mode="max")
-        callbacks = [val_ckpt, EarlyStopping(monitor="val_clfacc", patience=10, mode="max")]
+        callbacks = [
+            val_ckpt,
+            EarlyStopping(monitor="val_clfacc", patience=10, mode="max"),
+        ]
         logger = TensorBoardLogger(
             args.logs_path,
             name="malditrf%s_%s_%s_%s"
@@ -277,7 +299,14 @@ def main():
         logger = TensorBoardLogger(
             args.logs_path,
             name="malditrf%s_%s_%s_%s_%s_%s"
-            % (args.mode, args.spectrum_embedder, args.n_peaks, args.p, args.lmbda, args.lr),
+            % (
+                args.mode,
+                args.spectrum_embedder,
+                args.n_peaks,
+                args.p,
+                args.lmbda,
+                args.lr,
+            ),
         )
         callbacks = [
             ModelCheckpoint(every_n_train_steps=10_000),

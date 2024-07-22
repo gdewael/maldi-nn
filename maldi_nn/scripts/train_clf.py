@@ -13,8 +13,9 @@ import ast
 from maldi_nn.reproduce.modules import (
     MaldiTransformerNegSampler,
     MaldiTransformerOnlyClf,
-    MaldiTransformerMaskMSE
+    MaldiTransformerMaskMSE,
 )
+
 
 def boolean(v):
     if isinstance(v, bool):
@@ -33,14 +34,15 @@ def main():
     ):
         pass
 
-
     parser = argparse.ArgumentParser(
         description="Training script for species identification.",
         formatter_class=CustomFormatter,
     )
 
     parser.add_argument("path", type=str, metavar="path", help="path to h5torch file.")
-    parser.add_argument("logs_path", type=str, metavar="logs_path", help="path to logs.")
+    parser.add_argument(
+        "logs_path", type=str, metavar="logs_path", help="path to logs."
+    )
 
     parser.add_argument(
         "spectrum_embedder",
@@ -54,7 +56,7 @@ def main():
         "size",
         type=str,
         metavar="size",
-        choices=["Linear", "S", "M", "L", "XL"] ,
+        choices=["Linear", "S", "M", "L", "XL"],
         help="Model size, choices: {%(choices)s}. Linear is only available for mlp.",
     )
 
@@ -110,7 +112,6 @@ def main():
         help="Whether to transfer the clf output head of the Maldi Transformer. Can be set to true if domain adaptation was adopted.",
     )
 
-
     args = parser.parse_args()
 
     dm = SpeciesClfDataModule(
@@ -118,14 +119,21 @@ def main():
         batch_size=128,
         n_workers=args.num_workers,
         preprocessor=(
-            None if args.spectrum_embedder == "mlp" else PeakFilter(max_number=args.trf_n_peaks)
+            None
+            if args.spectrum_embedder == "mlp"
+            else PeakFilter(max_number=args.trf_n_peaks)
         ),
         in_memory=True,
     )
     dm.setup(None)
 
-    genus = pd.Series(dm.train.f["unstructured/species_labels"][:].view(np.ndarray)).astype(str).str.split(" ", expand=True)[0].values
-    mapper = {k : v for v, k in enumerate(np.unique(genus))}
+    genus = (
+        pd.Series(dm.train.f["unstructured/species_labels"][:].view(np.ndarray))
+        .astype(str)
+        .str.split(" ", expand=True)[0]
+        .values
+    )
+    mapper = {k: v for v, k in enumerate(np.unique(genus))}
     genus_labels = torch.tensor([mapper[k] for k in genus])
 
     size_to_layer_dims = {
@@ -173,7 +181,6 @@ def main():
             kwargs["depth"] = malditransformer.hparams.depth
             kwargs["dim"] = malditransformer.hparams.dim
 
-
     model = SpeciesClassifier(
         spectrum_embedder=args.spectrum_embedder,
         spectrum_kwargs=kwargs,
@@ -181,7 +188,7 @@ def main():
         weight_decay=0,
         lr_decay_factor=1,
         warmup_steps=250,
-        genus_labels = genus_labels
+        genus_labels=genus_labels,
     )
 
     if args.trf_ckpt_path != "None":
@@ -189,21 +196,21 @@ def main():
         model_state_dict = model.spectrum_embedder.state_dict()
         if not args.trf_transfer_output_head:
             pretrained_dict = {
-                k: v for k, v in pretrained_dict.items() if not k.startswith("output_head")
+                k: v
+                for k, v in pretrained_dict.items()
+                if not k.startswith("output_head")
             }
         else:
-            pretrained_dict = {
-                k: v for k, v in pretrained_dict.items()
-            }
+            pretrained_dict = {k: v for k, v in pretrained_dict.items()}
         model_state_dict.update(pretrained_dict)
         model.spectrum_embedder.load_state_dict(model_state_dict)
-
 
     val_ckpt = ModelCheckpoint(monitor="val_acc", mode="max")
     callbacks = [val_ckpt, EarlyStopping(monitor="val_acc", patience=10, mode="max")]
     logger = TensorBoardLogger(
         args.logs_path,
-        name="clf_%s_%s_%s_%s" % (args.spectrum_embedder, args.size, args.lr, args.trf_n_peaks),
+        name="clf_%s_%s_%s_%s"
+        % (args.spectrum_embedder, args.size, args.lr, args.trf_n_peaks),
     )
 
     trainer = Trainer(
@@ -238,6 +245,7 @@ def main():
             "%s\ttest\t%.5f\t%.5f\n"
             % (val_ckpt.best_model_path, p["val_acc"], p["val_genus_acc"])
         )
+
 
 if __name__ == "__main__":
     main()

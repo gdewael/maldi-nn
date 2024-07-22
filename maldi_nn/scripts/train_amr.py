@@ -12,7 +12,7 @@ import ast
 from maldi_nn.reproduce.modules import (
     MaldiTransformerNegSampler,
     MaldiTransformerOnlyClf,
-    MaldiTransformerMaskMSE
+    MaldiTransformerMaskMSE,
 )
 from maldi_nn.utils.metrics import *
 
@@ -33,8 +33,9 @@ class CustomFormatter(
 ):
     pass
 
-size_to_layer_dims ={
-    "mlp" : {
+
+size_to_layer_dims = {
+    "mlp": {
         "S": [256, 128],
         "M": [512, 256, 128],
         "L": [1024, 512, 256, 128],
@@ -46,7 +47,7 @@ size_to_layer_dims ={
         "M": [184, 6],
         "L": [232, 8],
         "XL": [304, 10],
-    }
+    },
 }
 
 drug_encoder_args = {
@@ -143,7 +144,11 @@ def main():
         drug_encoder_args=drug_encoder_args[args.drug_embedder],
         batch_size=128,
         n_workers=args.num_workers,
-        preprocessor=(None if args.spectrum_embedder == "mlp" else PeakFilter(max_number=args.trf_n_peaks)),
+        preprocessor=(
+            None
+            if args.spectrum_embedder == "mlp"
+            else PeakFilter(max_number=args.trf_n_peaks)
+        ),
         min_spectrum_len=None,
         in_memory=True,
     )
@@ -200,7 +205,6 @@ def main():
                 modeltype = MaldiTransformerNegSampler
             elif args.trf_ckpt_modeltype == "onlyclf":
                 modeltype = MaldiTransformerOnlyClf
-            
 
             malditransformer = modeltype.load_from_checkpoint(args.trf_ckpt_path)
             spectrum_kwargs["depth"] = malditransformer.hparams.depth
@@ -227,7 +231,6 @@ def main():
         model_state_dict.update(pretrained_dict)
         model.spectrum_embedder.load_state_dict(model_state_dict)
 
-
     val_ckpt = ModelCheckpoint(monitor="val_roc_auc", mode="max")
     callbacks = [
         val_ckpt,
@@ -235,7 +238,13 @@ def main():
     ]
     logger = TensorBoardLogger(
         args.logs_path,
-        name="amr%s_%s_%s_%s" % (args.spectrum_embedder, args.drug_embedder, args.spectrum_embedder_size, args.lr),
+        name="amr%s_%s_%s_%s"
+        % (
+            args.spectrum_embedder,
+            args.drug_embedder,
+            args.spectrum_embedder_size,
+            args.lr,
+        ),
     )
 
     trainer = Trainer(

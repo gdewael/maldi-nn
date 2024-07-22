@@ -5,6 +5,7 @@ import h5torch
 import sys
 import argparse
 
+
 def boolean(v):
     if isinstance(v, bool):
         return v
@@ -21,6 +22,7 @@ class CustomFormatter(
 ):
     pass
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Estimate distribution over negative peaks, and add it to the h5torch file. Necessary to run before training Maldiformer using sampled negative peaks.",
@@ -35,7 +37,7 @@ def main():
         help="Number of peaks",
     )
     args = parser.parse_args()
-    
+
     dm = DRIAMSSpectrumDataModule(
         args.path,
         batch_size=128,
@@ -58,11 +60,12 @@ def main():
         lens = np.array([len(tt) for tt in f["0/intensity"][:][dm.test_indices]])
         dm.test_indices = dm.test_indices[lens > dm.min_spectrum_len]
 
-
     f2 = f.to_dict()
     f.close()
 
-    dm.train = h5torch.Dataset(f2, subset=dm.train_indices, sample_processor=dm.processor)
+    dm.train = h5torch.Dataset(
+        f2, subset=dm.train_indices, sample_processor=dm.processor
+    )
 
     p_x = torch.zeros(dm.train[0]["intensity"].shape)
     p_y_x = [torch.tensor([]) for _ in range(len(p_x))]
@@ -94,7 +97,6 @@ def main():
             p_y_x_q.append(torch.quantile(p, torch.linspace(0, 1, 101)))
         else:
             p_y_x_q.append(torch.zeros(101))
-
 
     p_y_x = torch.stack(p_y_x_q).numpy()
 

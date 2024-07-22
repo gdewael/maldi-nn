@@ -9,6 +9,7 @@ import numpy as np
 from maldi_nn.spectrum import *
 import shutil
 
+
 def RKI_raw_to_h5torch(RKI_ROOT, outfile):
     data_path = files("maldi_nn.utils").joinpath("RKI_split.json")
     split = json.load(open(data_path))
@@ -124,6 +125,7 @@ def main():
     RKI_raw_to_h5torch(RKI_root, spectraraw)
     RKI_raw_to_binned(spectraraw, spectrabin)
     RKI_raw_to_peaks(spectraraw, spectrapks)
+
 
 if __name__ == "__main__":
     main()

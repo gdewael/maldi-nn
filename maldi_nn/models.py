@@ -193,7 +193,7 @@ class SpeciesClassifier(MaldiLightningModule):
         weight_decay=0,
         lr_decay_factor=1.00,
         warmup_steps=250,
-        genus_labels = None,
+        genus_labels=None,
     ):
         super().__init__(
             lr=lr,
@@ -213,7 +213,9 @@ class SpeciesClassifier(MaldiLightningModule):
         self.accuracy = MulticlassAccuracy(num_classes=n_classes, average="micro")
 
         if genus_labels is not None:
-            self.genus_accuracy = MulticlassAccuracy(num_classes=torch.unique(genus_labels).shape[0], average="micro")
+            self.genus_accuracy = MulticlassAccuracy(
+                num_classes=torch.unique(genus_labels).shape[0], average="micro"
+            )
             self.genus_labels = genus_labels
 
     def forward(self, batch):
@@ -254,7 +256,10 @@ class SpeciesClassifier(MaldiLightningModule):
             on_epoch=True,
             batch_size=len(batch["species"]),
         )
-        self.genus_accuracy(self.genus_labels.to(logits.device)[logits.argmax(-1)], self.genus_labels.to(logits.device)[batch["species"]])
+        self.genus_accuracy(
+            self.genus_labels.to(logits.device)[logits.argmax(-1)],
+            self.genus_labels.to(logits.device)[batch["species"]],
+        )
         self.log(
             "val_genus_acc",
             self.genus_accuracy,
@@ -290,7 +295,7 @@ class MaldiTransformer(MaldiLightningModule):
         weight_decay=0,
         lr_decay_factor=1,
         warmup_steps=2500,
-        lmbda = 1,
+        lmbda=1,
         proportional=False,
     ):
         super().__init__(
@@ -332,7 +337,6 @@ class MaldiTransformer(MaldiLightningModule):
         clf_logits = self.transformer.output_head(z[:, 0, :])
         return mlm_logits, clf_logits
 
-
     def training_step(self, batch, batch_idx):
         batch["intensity"] = batch["intensity"].to(self.dtype)
         batch["mz"] = batch["mz"].to(self.dtype)
@@ -353,10 +357,14 @@ class MaldiTransformer(MaldiLightningModule):
         clf_loss = F.cross_entropy(clf_logits[indexer], batch["species"][indexer])
 
         self.log(
-            "train_loss", mlm_loss + clf_loss * (1 if self.clf else 0), batch_size=len(batch["intensity"])
+            "train_loss",
+            mlm_loss + clf_loss * (1 if self.clf else 0),
+            batch_size=len(batch["intensity"]),
         )
         return mlm_loss + clf_loss * (
-            self.lmbda if ((torch.rand(1) < self.clf_train_p).item() and self.clf) else 0
+            self.lmbda
+            if ((torch.rand(1) < self.clf_train_p).item() and self.clf)
+            else 0
         )
 
     def validation_step(self, batch, batch_idx):
@@ -477,14 +485,20 @@ class MaldiTransformer(MaldiLightningModule):
         all_indices = torch.stack(torch.where(mz)).T
 
         if self.prop:
-            intensities_norm = (intensity / intensity.sum(1)[:, None]).reshape(-1).cpu().numpy()
+            intensities_norm = (
+                (intensity / intensity.sum(1)[:, None]).reshape(-1).cpu().numpy()
+            )
             shuff, pos = torch.chunk(
-                torch.tensor(np.random.choice(
-                    len(all_indices),
-                    int(len(all_indices) * self.p),
-                    replace = False,
-                    p = (intensities_norm / intensities_norm.sum())
-                ), device=all_indices.device), 2
+                torch.tensor(
+                    np.random.choice(
+                        len(all_indices),
+                        int(len(all_indices) * self.p),
+                        replace=False,
+                        p=(intensities_norm / intensities_norm.sum()),
+                    ),
+                    device=all_indices.device,
+                ),
+                2,
             )
 
         else:
