@@ -111,6 +111,12 @@ def main():
         default=False,
         help="Whether to transfer the clf output head of the Maldi Transformer. Can be set to true if domain adaptation was adopted.",
     )
+    parser.add_argument(
+        "--data_in_memory",
+        type=boolean,
+        default=True,
+        help="Whether to load the data in memory. Loading in memory typically results in faster training at the cost of increasing memory load.",
+    )
 
     args = parser.parse_args()
 
@@ -123,7 +129,7 @@ def main():
             if args.spectrum_embedder == "mlp"
             else PeakFilter(max_number=args.trf_n_peaks)
         ),
-        in_memory=True,
+        in_memory=args.data_in_memory,
     )
     dm.setup(None)
 

@@ -135,6 +135,12 @@ def main():
         choices=["vanilla", "negpeaksampler", "intensitymlm", "onlyclf", "onlyshf"],
         help="Maldi Transformer pre-trained modeltype. choices: {%(choices)s}",
     )
+    parser.add_argument(
+        "--data_in_memory",
+        type=boolean,
+        default=True,
+        help="Whether to load the data in memory. Loading in memory typically results in faster training at the cost of increasing memory load.",
+    )
 
     args = parser.parse_args()
 
@@ -150,7 +156,7 @@ def main():
             else PeakFilter(max_number=args.trf_n_peaks)
         ),
         min_spectrum_len=None,
-        in_memory=True,
+        in_memory=args.data_in_memory,
     )
     dm.setup(None)
 
