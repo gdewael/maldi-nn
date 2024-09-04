@@ -13,7 +13,7 @@
   - Genus-lvl
   - Family-lvl
 
-- Multi-class model:
+- Multi-class model:s
   - MLPs from Maldi Transformer (baseline: linear)
 
 - ZSL Model: Dual branch
@@ -35,4 +35,4 @@
   - 2. What is the zero-shot performance on multiple levels?
   - 3. A novel loss based on evolutionary dist. prediction?
   - 4. Impact of pre-training (Maldi Transformer & DNA VAE)
-  - 5. Model analyses (Difficult clades? / Embedding spaces? / Noise data?)
+  - 5. Model analyses (Difficult clades? / Embedding spaces? / Noise data? / Confidence of hold outs on diff lvls?)
