@@ -30,6 +30,9 @@
   - Impact of VAE pre-training DNA side
   - Loss function based on evolutionary dist. prediction?
 
+- Open questions:
+  - Is there a way for the model to indicate - per spectrum - that it is not sure on e.g. species-lvl, but is certain for genus-lvl?
+
 - Questions / sections:
   - 1. What is the ideal model size?
   - 2. What is the zero-shot performance on multiple levels?
