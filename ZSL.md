@@ -32,6 +32,7 @@
 
 - Open questions:
   - Is there a way for the model to indicate - per spectrum - that it is not sure on e.g. species-lvl, but is certain for genus-lvl?
+  - Should one feed all possible side-information classes or can one sample some negative classes during training?
 
 - Questions / sections:
   - 1. What is the ideal model size?
