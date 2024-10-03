@@ -75,10 +75,14 @@ class MALDITOFDataset(h5torch.Dataset):
 
 
 class MaldiDataModule(LightningDataModule):
-    def __init__(self, batch_size=16, n_workers=4):
+    def __init__(self, batch_size=16, n_workers=4, batch_collate_fn = None):
         super().__init__()
         self.n_workers = n_workers
         self.batch_size = batch_size
+        if batch_collate_fn is None:
+            self.batch_collate_fn = batch_collater
+        else:
+            self.batch_collate_fn = batch_collate_fn
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
@@ -87,7 +91,7 @@ class MaldiDataModule(LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,
-            collate_fn=batch_collater,
+            collate_fn=self.batch_collate_fn,
         )
 
     def val_dataloader(self):
@@ -97,7 +101,7 @@ class MaldiDataModule(LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             pin_memory=True,
-            collate_fn=batch_collater,
+            collate_fn=self.batch_collate_fn,
         )
 
     def test_dataloader(self):
@@ -107,7 +111,7 @@ class MaldiDataModule(LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             pin_memory=True,
-            collate_fn=batch_collater,
+            collate_fn=self.batch_collate_fn,
         )
 
 
@@ -460,6 +464,87 @@ class SpeciesClfDataModule(MaldiDataModule):
 
         self.n_species = len(f["unstructured/species_labels"])
 
+class SpeciesZSLDataModule(MaldiDataModule):
+    def __init__(
+        self,
+        path,
+        batch_size=512,
+        n_workers=4,
+        preprocessor=None,
+        in_memory=True,
+        split_number = 0,
+        zsl_mode=True,
+    ):
+        if zsl_mode:
+            super().__init__(batch_size=batch_size, n_workers=n_workers, batch_collate_fn=self.batch_collater_zsl)
+            self.seq = torch.tensor(h5torch.File(path)["1/strain_seq_encoded"][:])
+        else:
+            super().__init__(batch_size=batch_size, n_workers=n_workers)
+            self.n_species = len(h5torch.File(path)["unstructured"]["species_ix_to_name"][:])
+
+        self.path = path
+        self.preprocessor = preprocessor
+        self.in_memory = in_memory
+        
+        self.zsl_mode = zsl_mode
+        self.split_nr = split_number
+
+    def setup(self, stage):
+        f = h5torch.File(self.path)
+
+        if self.in_memory:
+            f = f.to_dict()
+
+        self.train = h5torch.Dataset(
+            f,
+            sampling=0,
+            sample_processor=self.sample_processor_zsl,
+            subset = ("0/split_%s" % self.split_nr, "train"),
+        )
+
+        self.val = h5torch.Dataset(
+            f,
+            sampling=0,
+            sample_processor=self.sample_processor_zsl,
+            subset = ("0/split_%s" % self.split_nr, "val" + ("_strain" if not self.zsl_mode else "")),
+        )
+
+        self.test = h5torch.Dataset(
+            f,
+            sampling=0,
+            sample_processor=self.sample_processor_zsl,
+            subset = ("0/split_%s" % self.split_nr, "test" + ("_strain" if not self.zsl_mode else "")),
+        )
+
+    def sample_processor_zsl(self, f, sample):
+        spectrum = SpectrumObject(
+            mz=(sample["0/mz"] if "0/mz" in sample else f["unstructured/mz"][:]),
+            intensity=sample["0/intensity"],
+        )
+
+        spectrum = {
+            "intensity": torch.tensor(spectrum.intensity).float(),
+            "mz": torch.tensor(spectrum.mz),
+        }
+
+        if self.preprocessor is not None:
+            spectrum = self.preprocessor(spectrum)
+
+        return (
+            spectrum
+            | {
+                "species": sample["0/species_ix"],
+                "strain" : sample["0/strain_ix"],
+                "loc": sample["0/loc"].astype(str), 
+                "split" : sample["0/split_%s" % self.split_nr]
+            }
+        )
+    
+    def batch_collater_zsl(self, batch):
+        collated = batch_collater(batch)
+        return collated | {
+            "seq" : self.seq,
+            }
 
 def batch_collater(batch):
     batch_collated = {}
