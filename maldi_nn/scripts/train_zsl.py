@@ -226,7 +226,7 @@ def main():
             model.spectrum_embedder.load_state_dict(model_state_dict)
 
         val_ckpt = ModelCheckpoint(monitor="val_acc", mode="max")
-        callbacks = [val_ckpt, EarlyStopping(monitor="val_acc", patience=10, mode="max")]
+        callbacks = [val_ckpt, EarlyStopping(monitor="val_acc", patience=25, mode="max")]
         logger = TensorBoardLogger(
             args.logs_path,
             name="clf_%s_%s_%s_%s"
@@ -237,7 +237,7 @@ def main():
             accelerator="gpu",
             devices=args.devices,
             strategy="auto",
-            max_epochs=250,
+            max_epochs=500,
             callbacks=callbacks,
             logger=logger,
         )
