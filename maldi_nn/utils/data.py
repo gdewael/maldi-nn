@@ -473,8 +473,11 @@ class SpeciesZSLDataModule(MaldiDataModule):
         preprocessor=None,
         in_memory=True,
         split_number = 0,
+        split_mode = "strain",
         zsl_mode=True,
     ):
+        #if split_mode != "strain":
+        #    assert zsl_mode == True, "novel species/genus settings can only be used for ZSL models."
         if zsl_mode:
             super().__init__(batch_size=batch_size, n_workers=n_workers, batch_collate_fn=self.batch_collater_zsl)
             self.seq = torch.tensor(h5torch.File(path)["1/strain_seq_encoded"][:])
@@ -488,6 +491,7 @@ class SpeciesZSLDataModule(MaldiDataModule):
         
         self.zsl_mode = zsl_mode
         self.split_nr = split_number
+        self.split_mode = split_mode
 
     def setup(self, stage):
         f = h5torch.File(self.path)
@@ -499,21 +503,21 @@ class SpeciesZSLDataModule(MaldiDataModule):
             f,
             sampling=0,
             sample_processor=self.sample_processor_zsl,
-            subset = ("0/split_%s" % self.split_nr, "train"),
+            subset = ("0/%ssplit_%s" % (self.split_mode, self.split_nr), "train"),
         )
 
         self.val = h5torch.Dataset(
             f,
             sampling=0,
             sample_processor=self.sample_processor_zsl,
-            subset = ("0/split_%s" % self.split_nr, "val" + ("_strain" if not self.zsl_mode else "")),
+            subset = ("0/%ssplit_%s" % (self.split_mode, self.split_nr), "val"),
         )
 
         self.test = h5torch.Dataset(
             f,
             sampling=0,
             sample_processor=self.sample_processor_zsl,
-            subset = ("0/split_%s" % self.split_nr, "test" + ("_strain" if not self.zsl_mode else "")),
+            subset = ("0/%ssplit_%s" % (self.split_mode, self.split_nr), "test"),
         )
 
     def sample_processor_zsl(self, f, sample):
@@ -536,7 +540,7 @@ class SpeciesZSLDataModule(MaldiDataModule):
                 "species": sample["0/species_ix"],
                 "strain" : sample["0/strain_ix"],
                 "loc": sample["0/loc"].astype(str), 
-                "split" : sample["0/split_%s" % self.split_nr]
+                "split" : sample["0/%ssplit_%s" % (self.split_mode, self.split_nr)]
             }
         )
     

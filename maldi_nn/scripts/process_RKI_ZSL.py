@@ -266,10 +266,11 @@ def RKI_ZSL_raw_to_h5torch(RKI_root, SILVA_fasta, lpsn_email, lpsn_pw, outfile):
 def add_splits(outfile):
     f = h5torch.File(outfile, "a")
 
-    for repeat in range(10):
-        data_path = files("maldi_nn.utils.zsl_splits").joinpath("RKI_split_%s.txt" % repeat)
-        indicator = np.loadtxt(data_path, dtype='str')
-        f.register(indicator.astype(bytes), axis = 0, name = "split_%s" % repeat, mode = "N-D", dtype_save="bytes", dtype_load="str")
+    for setting in ["genus", "species", "strain"]:
+        for repeat in range(10):
+            data_path = files("maldi_nn.utils.zsl_splits").joinpath("RKI_new%s_split_%s.txt" % (setting, repeat))
+            indicator = np.loadtxt(data_path, dtype='str')
+            f.register(indicator.astype(bytes), axis = 0, name = "%ssplit_%s" % (setting, repeat), mode = "N-D", dtype_save="bytes", dtype_load="str")
     f.close()
 
 def RKI_raw_to_binned(rawfile, processed_file):

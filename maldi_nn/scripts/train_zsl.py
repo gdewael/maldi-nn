@@ -74,6 +74,14 @@ def main():
         help="Which split to use. (Data is split in multiple independent splits)",
     )
 
+    parser.add_argument(
+        "--split_mode",
+        type=str,
+        default="strain",
+        choices=["strain", "species", "genus"],
+        help="Which split mode to use. (Data is split in multiple independent splits) choices: {%(choices)s}",
+    )
+
     parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate.")
 
     parser.add_argument(
@@ -139,6 +147,7 @@ def main():
         ),
         in_memory=args.data_in_memory,
         split_number = args.split_number,
+        split_mode = args.split_mode,
         zsl_mode = args.zsl_mode,
     )
     dm.setup(None)
@@ -229,8 +238,8 @@ def main():
         callbacks = [val_ckpt, EarlyStopping(monitor="val_acc", patience=25, mode="max")]
         logger = TensorBoardLogger(
             args.logs_path,
-            name="clf_%s_%s_%s_%s"
-            % (args.spectrum_embedder, args.size, args.lr, args.split_number),
+            name="clf_%s_%s_%s_%s_%s"
+            % (args.spectrum_embedder, args.size, args.lr, args.split_mode, args.split_number),
         )
 
         trainer = Trainer(

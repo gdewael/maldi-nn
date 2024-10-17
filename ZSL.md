@@ -2,16 +2,14 @@
 
 - Datasets: LM-UGent and RKI
 
-- 10x independent split with
-  - Strain hold out
-  - Species hold out
-  - Genus hold out
-  - Family hold out
+- Different models for different scenarios, train separately:
+  - 10x Strain hold out
+  - 10x Species hold out
+  - 10x Genus hold out
 
 - Multi-level accuracy evaluation
-  - Species-lvl
+  - Species-lvl (optimize for this one in all cases.)
   - Genus-lvl
-  - Family-lvl
 
 - Multi-class model:s
   - MLPs from Maldi Transformer (baseline: linear)
@@ -19,11 +17,10 @@
 - ZSL Model: Dual branch
   - Spectrum side: MLPs from Maldi Transformer (baseline: linear)
   - DNA side: ConvNet (tune a bit using default experiment set)
-  - Eval/inference: using all possible strains as candidate prediction set
+  - Eval/inference: using all possible strains in dataset as candidate prediction set
 
 - DNA side information data prep
-  - SILVA
-  - Algnmt?
+  - SILVA aligned 16s rRNA, 50_000 length sequences.
 
 - Extra experiments:
   - Impact of pre-trained Maldi Transformer
