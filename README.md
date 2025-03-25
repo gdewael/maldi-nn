@@ -78,28 +78,29 @@ All information regarding reproducing our results can be found in the [reproduce
 Antimicrobial drug recommenders:
 
 ```
-@article{dewaele2023antimicrobial,
+@article{dewaele2024antimicrobial,
   title={An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks},
-  url={http://dx.doi.org/10.1101/2023.09.28.559916},
-  DOI={10.1101/2023.09.28.559916},
-  publisher={Cold Spring Harbor Laboratory},
   author={De Waele, Gaetan and Menschaert, Gerben and Waegeman, Willem},
-  year={2023},
-  month=sep,
+  journal={eLife},
+  volume={13},
+  pages={RP93242},
+  year={2024},
+  publisher={eLife Sciences Publications Limited}
 }
+
 
 ```
 
 Maldi Transformers:
 
 ```
-@article{dewaele2024pre,
+@article{dewaele2025pre,
   title={Pre-trained Maldi Transformers improve MALDI-TOF MS-based prediction},
   author={De Waele, Gaetan and Menschaert, Gerben and Vandamme, Peter and Waegeman, Willem},
-  journal={bioRxiv},
-  pages={2024--01},
-  year={2024},
-  publisher={Cold Spring Harbor Laboratory}
+  journal={Computers in Biology and Medicine},
+  volume={186},
+  pages={109695},
+  year={2025},
+  publisher={Elsevier}
 }
-
 ```
