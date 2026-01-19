@@ -10,7 +10,7 @@ Package features:
 
 #### Minor note:
 As of August 2025, the [DRIAMS database](https://datadryad.org/stash/dataset/doi:10.5061/dryad.bzkh1899q) has updated some file names in DRIAMS-C, breaking some functionalities of this repository.
-When using `maldi-nn` with DRIAMS, please use the release dating from November 11, 2021.
+When using `maldi-nn` with DRIAMS, please use the DRIAMS release dating from November 11, 2021.
 
 ## Install
 
