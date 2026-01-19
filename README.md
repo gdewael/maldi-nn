@@ -8,6 +8,10 @@ Package features:
 - Model definitions and scripts to train AMR models on the [DRIAMS database](https://datadryad.org/stash/dataset/doi:10.5061/dryad.bzkh1899q).
 - Model definitions and scripts to train species identification models.
 
+#### Minor note:
+As of August 2025, the [DRIAMS database](https://datadryad.org/stash/dataset/doi:10.5061/dryad.bzkh1899q) has updated some file names in DRIAMS-C, breaking some functionalities of this repository.
+When using `maldi-nn` with DRIAMS, please use the release dating from November 11, 2021.
+
 ## Install
 
 `maldi-nn` is distributed on PyPI.
